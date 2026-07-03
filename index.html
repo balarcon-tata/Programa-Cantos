@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Programa Cantos + Escaneos</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root{
+      --bg:#f4f5f7; --panel:#ffffff; --text:#101114; --muted:#6b7280; --line:#d9dde5;
+      --black:#0a0a0a; --soft:#f8fafc; --green:#16a34a; --red:#dc2626; --amber:#f59e0b; --blue:#2563eb;
+      --shadow:0 10px 28px rgba(15,23,42,.10); --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif;font-size:13px}
+    header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50;box-shadow:0 3px 12px rgba(0,0,0,.04)}
+    .top{max-width:1500px;margin:0 auto;padding:16px 22px;display:flex;gap:16px;align-items:center;justify-content:space-between}
+    .brand{display:flex;align-items:center;gap:14px}.logo{width:42px;height:42px;border-radius:12px;background:#0b0b0b;color:#fff;display:grid;place-items:center;font-weight:900;letter-spacing:.5px}.title h1{font-size:20px;margin:0}.title p{margin:3px 0 0;color:var(--muted)}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.btn{border:1px solid var(--line);background:#fff;color:#111;padding:9px 13px;border-radius:11px;font-weight:700;cursor:pointer}.btn.primary{background:#111;color:#fff;border-color:#111}.btn:hover{filter:brightness(.97)}
+    main{max-width:1500px;margin:18px auto;padding:0 22px 35px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px}.card h2{font-size:14px;margin:0 0 8px}.drop{border:2px dashed #cfd5df;border-radius:14px;padding:10px;text-align:center;background:#fbfcfe}.drop input{margin-top:6px;max-width:100%}.hint{color:var(--muted);font-size:12px;line-height:1.4}.status{margin-top:10px;font-weight:700}.ok{color:var(--green)}.bad{color:var(--red)}
+    .kpis{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:12px;margin:14px 0}.kpi{background:#fff;border:1px solid var(--line);border-radius:16px;padding:13px;box-shadow:0 5px 16px rgba(15,23,42,.06)}.kpi b{display:block;font-size:22px;margin-top:4px}.kpi span{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+    .tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0}.search{min-width:260px;flex:1;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit}.select{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;font:inherit}.pill{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 11px;color:#374151;font-weight:650}
+    .opsEditor{display:none;margin-top:10px}.opsEditor textarea{width:100%;min-height:120px;border:1px solid var(--line);border-radius:12px;padding:10px;font-family:Consolas,monospace;font-size:12px}.opsEditor.active{display:block}
+    .tableWrap{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:auto;box-shadow:var(--shadow);max-height:72vh}.prodTable{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%}.prodTable th,.prodTable td{border-right:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb;padding:7px 8px;white-space:nowrap;text-align:center}.prodTable th{position:sticky;top:0;z-index:5;background:#0b0b0b;color:#fff;font-size:12px}.prodTable th.leftSticky{z-index:8}.prodTable td.leftSticky,.prodTable th.leftSticky{position:sticky;left:0}.prodTable td.leftSticky{background:#fff;z-index:4;text-align:left;font-weight:700}.prodTable td:nth-child(2),.prodTable th:nth-child(2){position:sticky;left:92px;z-index:4}.prodTable th:nth-child(2){z-index:8}.prodTable td:nth-child(2){background:#fff;font-weight:700;text-align:left}.prodTable tbody tr:hover td{background:#f8fafc}.prodTable tbody tr:hover td.leftSticky,.prodTable tbody tr:hover td:nth-child(2){background:#f8fafc}.prodTable tbody tr.rowDone td,.prodTable tbody tr.rowDone td.leftSticky,.prodTable tbody tr.rowDone td:nth-child(2){background:#dcfce7!important;color:#14532d!important;font-weight:850}.prodTable tbody tr.rowDone:hover td,.prodTable tbody tr.rowDone:hover td.leftSticky,.prodTable tbody tr.rowDone:hover td:nth-child(2){background:#bbf7d0!important;color:#14532d!important}.prodTable tbody tr.rowDone .lineTag{background:#16a34a!important;color:#fff!important}.progHead{background:#111827!important}.dateHead{background:#374151!important}.opHead{background:#111!important;min-width:115px}.wipHead{background:#7c2d12!important}.alertHead{background:#991b1b!important}.wipCell{background:#ffedd5!important;color:#7c2d12;font-weight:900}.alertCell{background:#fee2e2!important;color:#991b1b;font-weight:900}.alertOk{background:#ecfdf5!important;color:#065f46;font-weight:800}.qty{font-variant-numeric:tabular-nums}.zero{color:#9ca3af}.dash{color:#c0c4cc}.complete{background:#dcfce7!important;color:#14532d;font-weight:800}.partial{background:#fef3c7!important;color:#78350f;font-weight:800}.missing{background:#fee2e2!important;color:#7f1d1d;font-weight:800}.over{background:#dbeafe!important;color:#1e3a8a;font-weight:800}.lineTag{display:inline-block;background:#eef2ff;color:#3730a3;border-radius:8px;padding:3px 6px}.small{font-size:11px;color:var(--muted)}
+    .summary{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}.miniTable{width:100%;border-collapse:collapse}.miniTable th,.miniTable td{padding:8px;border-bottom:1px solid var(--line);text-align:right}.miniTable th:first-child,.miniTable td:first-child{text-align:left}.miniTable th{background:#111;color:#fff}.bar{height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden}.bar>i{display:block;height:100%;background:#111;border-radius:999px}
+    @media(max-width:900px){.grid,.summary{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}.top{align-items:flex-start;flex-direction:column}.actions{justify-content:flex-start}}
+    @media print{header,.grid,.tools,.opsEditor,.summary{display:none!important}main{max-width:none;padding:0;margin:0}.tableWrap{box-shadow:none;border:0;max-height:none}.prodTable th{position:static}.prodTable td,.prodTable th{font-size:9px;padding:4px}.prodTable td.leftSticky,.prodTable th.leftSticky,.prodTable td:nth-child(2),.prodTable th:nth-child(2){position:static}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <div class="brand"><div class="logo">EN</div><div class="title"><h1>Programa de Producción · Zona de Cantos</h1><p>Cruce automático entre programa semanal y detalle de escaneos por operación</p></div></div>
+    <div class="actions"><button class="btn" id="toggleOps">Orden de operaciones</button><button class="btn" onclick="window.print()">Imprimir</button><button class="btn primary" id="exportCsv">Exportar CSV</button></div>
+  </div>
+</header>
+<main>
+  <section class="grid">
+    <div class="card"><h2>1. Programa de cantos</h2><div class="drop"><b>Excel del programa semanal</b><br><span class="hint">Línea, orden, cliente, Ex Date y días.</span><br><input id="programFile" type="file" accept=".xlsx,.xls" /></div><div id="programStatus" class="status hint">Pendiente.</div></div>
+    <div class="card"><h2>2. Detalle de escaneos</h2><div class="drop"><b>Excel de escaneos</b><br><span class="hint">Orden, Operación y Cantidad.</span><br><input id="scanFile" type="file" accept=".xlsx,.xls" /></div><div id="scanStatus" class="status hint">Pendiente.</div></div>
+    <div class="card"><h2>3. Planificación por familia</h2><div class="drop"><b>Archivo data / planificación</b><br><span class="hint">Cruza Orden y toma la DESCRIPCION.</span><br><input id="familyFile" type="file" accept=".xlsx,.xls" /></div><div id="familyStatus" class="status hint">Pendiente.</div></div>
+  </section>
+
+  <section class="opsEditor" id="opsEditor"><div class="card"><h2>Orden de operaciones</h2><p class="hint">Una operación por línea. Solo se mostrarán operaciones con valores en el archivo de escaneos. Los entintados se consolidan en TOTAL ENTINTADOS.</p><textarea id="opsText"></textarea><div style="margin-top:10px"><button class="btn primary" id="applyOps">Aplicar orden</button></div></div></section>
+
+  <section class="kpis">
+    <div class="kpi"><span>Órdenes programa</span><b id="kOrders">0</b></div>
+    <div class="kpi"><span>Unidades planificadas</span><b id="kPlan">0</b></div>
+    <div class="kpi"><span>Órdenes con escaneo</span><b id="kMatched">0</b></div>
+    <div class="kpi"><span>Avance conteo cantos</span><b id="kProgress">0%</b></div>
+    <div class="kpi"><span>Pendiente total</span><b id="kPending">0</b></div>
+  </section>
+
+  <section class="tools">
+    <input class="search" id="searchBox" placeholder="Buscar por orden, línea o cliente..." />
+    <select class="select" id="lineFilter"><option value="">Todas las líneas</option></select>
+    <select class="select" id="clientFilter"><option value="">Todos los clientes</option></select>
+    <span class="pill" id="rowCount">0 registros</span>
+  </section>
+
+  <section class="tableWrap"><table class="prodTable" id="resultTable"></table></section>
+
+  <section class="summary">
+    <div class="card"><h2>Resumen por operación</h2><table class="miniTable" id="opSummary"></table></div>
+    <div class="card"><h2>Resumen por línea</h2><table class="miniTable" id="lineSummary"></table></div>
+  </section>
+</main>
+<script>
+const ENTINTADO_OPS = ['ENTINTA CANTOS','ENTINTADO DE CANTOS','ENTINTAR CANTOS','ENTINTAR CANTOS AUTOMATICO'];
+const DEFAULT_OPERATIONS = [
+  'RECEPCION PRE-ENTINTADO',
+  'DESPACHO PRE-ENTINTADO',
+  'SALIDA PRE - ENTINTADO',
+  'WIP PRE-ENTINTADO',
+  'ALERTA SALIDA PRE',
+  'DESPACHO CANTOS',
+  'TOTAL ENTINTADOS',
+  'MAQUILLAJE Y LIMPIEZA',
+  'CONTEO CANTOS',
+  'WIP CANTOS'
+];
+let operations = [...DEFAULT_OPERATIONS], programRows = [], scanAgg = {}, scanDates = {}, scanOps = new Set(), planFamilyMap = {}, dateColumns = [], currentRows = [];
+const $ = id => document.getElementById(id);
+const fmt = n => Number(n||0).toLocaleString('es-GT',{maximumFractionDigits:0});
+const norm = v => String(v ?? '').trim().toUpperCase();
+const orderBase = v => norm(v).split('::')[0].trim();
+const qty = v => { if(v==='-'||v===''||v==null) return 0; const n = Number(String(v).replace(/,/g,'')); return isNaN(n)?0:n; };
+const dayName = d => ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][d.getDay()];
+function excelDateToJSDate(n){ return new Date(Math.round((n - 25569) * 86400 * 1000)); }
+function toJSDate(v){ if(v instanceof Date) return v; if(typeof v === 'number' && v>20000 && v<60000) return excelDateToJSDate(v); const d=new Date(v); return isNaN(d)?null:d; }
+function daysBetween(a,b){ if(!a||!b) return 0; const one=86400000; const da=new Date(a.getFullYear(),a.getMonth(),a.getDate()); const db=new Date(b.getFullYear(),b.getMonth(),b.getDate()); return Math.max(0, Math.floor((db-da)/one)); }
+function readWorkbook(file){ return new Promise((resolve,reject)=>{ const r=new FileReader(); r.onload=e=>{ try{ resolve(XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true})); }catch(err){reject(err)} }; r.onerror=reject; r.readAsArrayBuffer(file); }); }
+function sheetRows(wb){ const ws=wb.Sheets[wb.SheetNames[0]]; return XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''}); }
+function findHeaderRow(rows, required){ for(let i=0;i<Math.min(rows.length,15);i++){ const vals=rows[i].map(x=>norm(x)); if(required.every(r=>vals.includes(r))) return i; } return -1; }
+function colIndex(headers, names){ const upper=headers.map(h=>norm(h)); for(const name of names){ const ix=upper.indexOf(norm(name)); if(ix>=0) return ix; } return -1; }
+function parseProgram(rows){
+  const hr=findHeaderRow(rows,['ORDEN','LINEA']); if(hr<0) throw new Error('No encontré encabezados de programa: Linea y Orden.');
+  const h=rows[hr]; const ix={line:colIndex(h,['Linea','Línea']), order:colIndex(h,['Orden']), receta:colIndex(h,['Receta']), estilo:colIndex(h,['ESTILO','Estilo']), estiloCliente:colIndex(h,['Estilo Cliente']), cliente:colIndex(h,['Cliente']), exdate:colIndex(h,['Ex Date']), cantOrden:colIndex(h,['Cant. en Orden','Cantidad en Orden']), total:colIndex(h,['Total Planificado','Planificado']), tipo:colIndex(h,['Tipo Orden'])};
+  dateColumns=[]; h.forEach((v,i)=>{ let isDate = v instanceof Date || (typeof v === 'number' && v>20000 && v<60000); if(isDate){ const d = v instanceof Date ? v : excelDateToJSDate(v); dateColumns.push({index:i,label:dayName(d),date:d}); } });
+  if(!dateColumns.length){ for(let i=ix.total+1;i<(ix.tipo>0?ix.tipo:h.length);i++) dateColumns.push({index:i,label:String(h[i]||'Día'),date:null}); }
+  const out=[];
+  for(let r=hr+1;r<rows.length;r++){
+    const row=rows[r]; if(!row || !row[ix.order]) continue;
+    const daily={}; let dailyTotal=0; dateColumns.forEach(dc=>{ const q=qty(row[dc.index]); daily[dc.label]=q; dailyTotal+=q; });
+    const total=qty(row[ix.total]) || dailyTotal;
+    out.push({
+      line:String(row[ix.line]||''), orderFull:String(row[ix.order]||''), order:orderBase(row[ix.order]), receta:String(row[ix.receta]||''), estiloFull:String(row[ix.estilo]||''), estilo:orderBase(row[ix.estilo]), estiloCliente:String(row[ix.estiloCliente]||''), cliente:String(row[ix.cliente]||''), exdate:row[ix.exdate]||'', cantOrden:qty(row[ix.cantOrden]), totalPlan:total, tipo:String(row[ix.tipo]||''), daily
+    });
+  }
+  return out;
+}
+function parseScans(rows){
+  const hr=findHeaderRow(rows,['ORDEN','OPERACIÓN','CANTIDAD']); if(hr<0) throw new Error('No encontré encabezados de escaneos: Orden, Operación y Cantidad.');
+  const h=rows[hr]; const io=colIndex(h,['Orden']), iop=colIndex(h,['Operación','Operacion']), iq=colIndex(h,['Cantidad']), idate=colIndex(h,['Fecha Escaneo','Fecha']);
+  const agg={}; const dates={}; scanOps=new Set();
+  for(let r=hr+1;r<rows.length;r++){
+    const row=rows[r]; if(!row || !row[io] || !row[iop]) continue;
+    const o=orderBase(row[io]); const op=String(row[iop]).trim(); const q=qty(row[iq]); const dt = idate>=0 ? toJSDate(row[idate]) : null;
+    if(!agg[o]) agg[o]={}; agg[o][op]=(agg[o][op]||0)+q; scanOps.add(op);
+    if(dt){
+      if(!dates[o]) dates[o]={};
+      if(!dates[o][op]) dates[o][op]={first:dt,last:dt};
+      if(dt < dates[o][op].first) dates[o][op].first = dt;
+      if(dt > dates[o][op].last) dates[o][op].last = dt;
+    }
+  }
+  scanDates = dates;
+  return agg;
+}
+function cleanFamilyName(v){
+  let txt=String(v||'').trim();
+  txt=txt.replace(/^\s*\d+\s*/,'').trim();
+  return txt || '-';
+}
+function parseFamilyPlan(rows){
+  const hr=findHeaderRow(rows,['ORDEN','DESCRIPCION']);
+  if(hr<0) throw new Error('No encontré encabezados: ORDEN y DESCRIPCION.');
+  const h=rows[hr]; const io=colIndex(h,['Orden','ORDEN']), id=colIndex(h,['DESCRIPCION','Descripción','Descripcion']);
+  const map={};
+  for(let r=hr+1;r<rows.length;r++){
+    const row=rows[r]; if(!row || !row[io]) continue;
+    const o=orderBase(row[io]); const fam=cleanFamilyName(row[id]);
+    if(o && fam && fam!=='-' && !map[o]) map[o]=fam;
+  }
+  return map;
+}
+function getOpValue(row, op){
+  const data=scanAgg[row.order]||{};
+  if(op==='Faltante' || op==='PENDIENTE DE CONTAR') return Math.max(0, row.totalPlan - (data['CONTEO CANTOS']||0));
+  if(op==='TOTAL ENTINTADOS') return ENTINTADO_OPS.reduce((a,x)=>a+(data[x]||0),0);
+  if(op==='WIP CANTOS') return Math.max(0, getOpValue(row,'TOTAL ENTINTADOS') - (data['CONTEO CANTOS']||0));
+  if(op==='WIP PRE-ENTINTADO') return Math.max(0, (data['DESPACHO PRE-ENTINTADO']||0) - (data['SALIDA PRE - ENTINTADO']||0));
+  if(op==='ALERTA SALIDA PRE') return getAlertDays(row);
+  return data[op]||0;
+}
+function getAlertDays(row){
+  const data=scanAgg[row.order]||{};
+  const hasSalida=(data['SALIDA PRE - ENTINTADO']||0)>0;
+  const hasDespachoCantos=(data['DESPACHO CANTOS']||0)>0;
+  if(!hasSalida || hasDespachoCantos) return 0;
+  const d=scanDates[row.order]?.['SALIDA PRE - ENTINTADO']?.last || null;
+  return d ? daysBetween(d, new Date()) : 0;
+}
+function displayOpValue(row, op){
+  if(op==='ALERTA SALIDA PRE'){
+    const d=getAlertDays(row);
+    return d ? `${d} día${d===1?'':'s'}` : '-';
+  }
+  const v=getOpValue(row,op);
+  return v?fmt(v):'0';
+}
+function cellClass(v,total,op){ if(op==='ALERTA SALIDA PRE') return v>0?'alertCell':'alertOk'; if(op==='WIP CANTOS'||op==='WIP PRE-ENTINTADO') return v>0?'wipCell':'zero'; if(!v) return 'zero'; if(op==='Faltante'||op==='PENDIENTE DE CONTAR') return v>0?'missing':'complete'; const pct=total? v/total:0; if(pct>=1.02) return 'over'; if(pct>=.98) return 'complete'; if(pct>0) return 'partial'; return 'zero'; }
+function isOrderFinished(row){
+  const target = Number(row.cantOrden||0);
+  const conteo = Number(getOpValue(row,'CONTEO CANTOS')||0);
+  return target > 0 && conteo > 0 && Math.abs(conteo - target) <= 5;
+}
+function renderFilters(){
+  const lineSel=$('lineFilter'), clientSel=$('clientFilter'); const lineVal=lineSel.value, clientVal=clientSel.value;
+  const lines=[...new Set(programRows.map(r=>r.line).filter(Boolean))].sort(); const clients=[...new Set(programRows.map(r=>r.cliente).filter(Boolean))].sort();
+  lineSel.innerHTML='<option value="">Todas las líneas</option>'+lines.map(x=>`<option ${x===lineVal?'selected':''}>${x}</option>`).join('');
+  clientSel.innerHTML='<option value="">Todos los clientes</option>'+clients.map(x=>`<option ${x===clientVal?'selected':''}>${x}</option>`).join('');
+}
+function applyFilters(){
+  const q=norm($('searchBox').value), line=$('lineFilter').value, client=$('clientFilter').value;
+  currentRows=programRows.filter(r=>(!line||r.line===line)&&(!client||r.cliente===client)&&(!q||norm([r.orderFull,r.line,r.cliente,(planFamilyMap[r.order]||'')].join(' ')).includes(q)));
+  renderTable(); renderSummaries(); updateKpis();
+}
+function renderTable(){
+  const t=$('resultTable');
+  if(!programRows.length){ t.innerHTML='<thead><tr><th>Carga los Excel para ver el cruce</th></tr></thead>'; return; }
+  const baseHeads=['Línea','Familia Planificada','Orden','Cliente','Ex Date','Cant. en Orden'];
+  const dateHeads=dateColumns.map(d=>d.label);
+  let html='<thead><tr>'+baseHeads.map((h,i)=>`<th class="${i<2?'leftSticky ':''}progHead">${h}</th>`).join('')+dateHeads.map(h=>`<th class="dateHead">${h}</th>`).join('')+operations.map(op=>`<th class="${op==='WIP CANTOS'||op==='WIP PRE-ENTINTADO'?'wipHead':(op==='ALERTA SALIDA PRE'?'alertHead':'opHead')}">${op}</th>`).join('')+'</tr></thead><tbody>';
+  currentRows.forEach(r=>{
+    const ex = r.exdate instanceof Date ? r.exdate.toLocaleDateString('es-GT') : (typeof r.exdate==='number'?excelDateToJSDate(r.exdate).toLocaleDateString('es-GT'):String(r.exdate||''));
+    const rowDone = isOrderFinished(r);
+    const rowTitle = rowDone ? 'Orden terminada: CONTEO CANTOS está dentro de ±5 unidades de Cant. en Orden' : '';
+    html+=`<tr class="${rowDone?'rowDone':''}" title="${rowTitle}">`+
+    `<td class="leftSticky"><span class="lineTag">${r.line}</span></td><td>${planFamilyMap[r.order]||'-'}</td><td>${r.orderFull}</td><td>${r.cliente}</td><td>${ex}</td><td class="qty">${fmt(r.cantOrden)}</td>`+
+    dateColumns.map(d=>{const v=r.daily[d.label]||0; return `<td class="qty ${v?'':'dash'}">${v?fmt(v):'-'}</td>`}).join('')+
+    operations.map(op=>{ const v=getOpValue(r,op), cls=cellClass(v,r.totalPlan,op); return `<td class="qty ${cls}">${displayOpValue(r,op)}</td>`; }).join('')+'</tr>';
+  });
+  html+='</tbody>'; t.innerHTML=html; $('rowCount').textContent=`${fmt(currentRows.length)} registros`;
+}
+function updateKpis(){
+  const rows=currentRows.length?currentRows:programRows; const total=rows.reduce((a,r)=>a+r.totalPlan,0); const matched=rows.filter(r=>scanAgg[r.order]).length; const conteo=rows.reduce((a,r)=>a+getOpValue(r,'CONTEO CANTOS'),0); const pending=Math.max(0,total-conteo);
+  $('kOrders').textContent=fmt(rows.length); $('kPlan').textContent=fmt(total); $('kMatched').textContent=fmt(matched); $('kProgress').textContent= total? Math.round((conteo/total)*100)+'%':'0%'; $('kPending').textContent=fmt(pending);
+}
+function renderSummaries(){
+  const rows=currentRows.length?currentRows:programRows; const plan=rows.reduce((a,r)=>a+r.totalPlan,0)||1;
+  let oh='<tr><th>Operación</th><th>Escaneado</th><th>% vs plan</th></tr>'; operations.forEach(op=>{ const total=rows.reduce((a,r)=>a+getOpValue(r,op),0); const pct=Math.round(total/plan*100); oh+=`<tr><td>${op}<div class="bar"><i style="width:${Math.min(pct,100)}%"></i></div></td><td>${fmt(total)}</td><td>${pct}%</td></tr>`; }); $('opSummary').innerHTML=oh;
+  const by={}; rows.forEach(r=>{ if(!by[r.line]) by[r.line]={plan:0,conteo:0,orders:0}; by[r.line].plan+=r.totalPlan; by[r.line].conteo+=getOpValue(r,'CONTEO CANTOS'); by[r.line].orders++; });
+  let lh='<tr><th>Línea</th><th>Órdenes</th><th>Plan</th><th>Conteo</th><th>%</th></tr>'; Object.keys(by).sort().forEach(l=>{const x=by[l], pct=x.plan?Math.round(x.conteo/x.plan*100):0; lh+=`<tr><td>${l}<div class="bar"><i style="width:${Math.min(pct,100)}%"></i></div></td><td>${fmt(x.orders)}</td><td>${fmt(x.plan)}</td><td>${fmt(x.conteo)}</td><td>${pct}%</td></tr>`}); $('lineSummary').innerHTML=lh;
+}
+function renderAll(){ renderFilters(); applyFilters(); }
+$('programFile').addEventListener('change', async e=>{ try{ const wb=await readWorkbook(e.target.files[0]); programRows=parseProgram(sheetRows(wb)); $('programStatus').innerHTML=`<span class="ok">Programa cargado:</span> ${fmt(programRows.length)} órdenes.`; renderAll(); }catch(err){ $('programStatus').innerHTML=`<span class="bad">Error:</span> ${err.message}`; }});
+$('scanFile').addEventListener('change', async e=>{ try{ const wb=await readWorkbook(e.target.files[0]); scanAgg=parseScans(sheetRows(wb)); operations = DEFAULT_OPERATIONS.filter(op => Object.keys(scanAgg).some(o => getOpValue({order:o,totalPlan:0}, op) > 0)); $('scanStatus').innerHTML=`<span class="ok">Escaneos cargados:</span> ${fmt(Object.keys(scanAgg).length)} órdenes con registros. Operaciones visibles: ${operations.length}.`; $('opsText').value=operations.join('\n'); renderAll(); }catch(err){ $('scanStatus').innerHTML=`<span class="bad">Error:</span> ${err.message}`; }});
+$('familyFile').addEventListener('change', async e=>{ try{ const wb=await readWorkbook(e.target.files[0]); planFamilyMap=parseFamilyPlan(sheetRows(wb)); $('familyStatus').innerHTML=`<span class="ok">Familias cargadas:</span> ${fmt(Object.keys(planFamilyMap).length)} órdenes.`; renderAll(); }catch(err){ $('familyStatus').innerHTML=`<span class="bad">Error:</span> ${err.message}`; }});
+['searchBox','lineFilter','clientFilter'].forEach(id=>$(id).addEventListener('input',applyFilters));
+$('toggleOps').onclick=()=>{ $('opsEditor').classList.toggle('active'); $('opsText').value=operations.join('\n'); };
+$('applyOps').onclick=()=>{ operations=$('opsText').value.split('\n').map(x=>x.trim()).filter(Boolean); renderAll(); };
+$('exportCsv').onclick=()=>{
+  const heads=['Linea','Familia Planificada','Orden','Cliente','Ex Date','Cant en Orden',...dateColumns.map(d=>d.label),...operations];
+  const rows=(currentRows.length?currentRows:programRows).map(r=>[r.line,planFamilyMap[r.order]||'',r.orderFull,r.cliente,r.exdate,r.cantOrden,...dateColumns.map(d=>r.daily[d.label]||0),...operations.map(op=>getOpValue(r,op))]);
+  const csv=[heads,...rows].map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='programa_cantos_escaneos.csv'; a.click(); URL.revokeObjectURL(a.href);
+};
+$('opsText').value=operations.join('\n'); renderTable();
+</script>
+</body>
+</html>
