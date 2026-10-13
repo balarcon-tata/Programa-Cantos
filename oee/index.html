@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TATA | OEE Cantos</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,"Segoe UI",Arial,sans-serif;background:#080f18;color:#e9f2fc}
+*{box-sizing:border-box}body{margin:0}button,input,select{font:inherit}button{cursor:pointer}a{color:#7acaff}
+header{display:flex;align-items:center;justify-content:space-between;padding:24px max(24px,calc((100vw - 1500px)/2));border-bottom:1px solid #263749;background:#0b1420}
+h1{margin:0;font-size:clamp(24px,3vw,36px);letter-spacing:-1px}h1 span,.accent{color:#65bfff}
+small,.muted{color:#8ea5b8}.sub{margin:8px 0 0;color:#93a8ba;font-size:13px}
+main{max-width:1500px;margin:auto;padding:28px 24px} .bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+button,.field{background:#142434;color:#e3f1ff;border:1px solid #2b4760;border-radius:10px;padding:11px 14px}
+button.primary{background:#319de6;border-color:#319de6;color:#081523;font-weight:700}button:disabled{opacity:.4}
+.field{min-width:155px} .grow{flex:1}
+.grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
+.card,.panel{background:#101d29;border:1px solid #243a4c;border-radius:15px;padding:20px;min-width:0}
+.k{font-size:11px;font-weight:800;letter-spacing:1.3px;color:#91a9bb;text-transform:uppercase}
+.value{font-size:32px;font-weight:750;margin:18px 0 5px}.panel{margin-top:18px}h2{font-size:17px;margin:0 0 14px}
+.split{display:grid;grid-template-columns:2fr 1fr;gap:18px}.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:850px;text-align:left}th{font-size:11px;color:#90a9bd;text-transform:uppercase;letter-spacing:1px}td,th{padding:15px 12px;border-bottom:1px solid #263c4d}td{font-size:13px}
+.pill{padding:5px 9px;border-radius:7px;background:#273746;color:#ccdceb;display:inline-block;font-size:11px;font-weight:700}
+.good{background:#124a38;color:#70e1ad}.bad{background:#502934;color:#ff93a7}.warn{background:#50391c;color:#ffcf83}
+.line{height:8px;border-radius:9px;background:#243748;overflow:hidden;margin-top:10px}.fill{height:100%;background:#56b9ed;max-width:100%}
+#auth{max-width:430px;margin:75px auto;text-align:center}.stack{display:grid;gap:13px}.stack input{width:100%}#app{display:none}
+#chart{width:100%;height:270px}#warnings{font-size:13px;line-height:1.7;max-height:320px;overflow:auto}#warningbar{margin:12px 0;color:#ffd09a}
+.modal{position:fixed;inset:0;background:#03070dcc;display:none;align-items:center;justify-content:center;padding:24px;z-index:10}
+.modal .panel{width:min(530px,100%);max-height:90vh;overflow:auto}.target-row{display:flex;align-items:center;gap:15px;justify-content:space-between;margin:8px 0}.target-row input{width:120px}
+@media(max-width:1050px){.grid{grid-template-columns:repeat(2,1fr)}.split{grid-template-columns:1fr}}
+@media(max-width:600px){.grid{grid-template-columns:1fr 1fr}.value{font-size:25px}header{padding:18px}main{padding:15px} .card{padding:14px}}
+</style></head><body>
+<header><div><h1>TATA <span>| OEE Cantos</span></h1><p class="sub">Monitor de producción · INTEQ · 11 máquinas</p></div><div><small id="identity">Acceso corporativo</small> <button id="signout" style="display:none">Salir</button></div></header>
+<section id="auth" class="panel"><h2>Acceso al monitor</h2><p class="muted">Ingresa con tu correo corporativo TATA. El enlace es público, pero los datos requieren autorización.</p><div class="stack"><input class="field" id="email" type="email" placeholder="usuario@tata.com.gt" autocomplete="email"><button id="login" class="primary">Enviar enlace de acceso</button><p id="authmsg" class="muted"></p></div></section>
+<main id="app">
+<div class="bar"><select id="period" class="field"><option value="24">Últimas 24 horas</option><option value="8">Últimas 8 horas</option><option value="48">Últimas 48 horas</option><option value="168">Últimos 7 días</option></select><select id="machine" class="field"><option value="all">Todas las máquinas</option></select><div class="grow"></div><small id="update"></small><button id="targets">Configurar metas</button><button id="refresh" class="primary">Actualizar</button></div>
+<div id="warningbar"></div>
+<div class="grid">
+<div class="card"><div class="k">Producción registrada</div><div class="value" id="units">—</div><small>Unidades · período seleccionado</small></div>
+<div class="card"><div class="k">Eficiencia ponderada</div><div class="value" id="eff">—</div><small>Solo horas válidas con meta</small></div>
+<div class="card"><div class="k">Ocupación ponderada</div><div class="value" id="occupancy">—</div><small>Tiempo activo / tiempo registrado</small></div>
+<div class="card"><div class="k">Máquinas con datos</div><div class="value" id="online">0 / 11</div><small>En el período consultado</small></div>
+<div class="card"><div class="k">Alertas</div><div class="value" id="alerts">—</div><small>Desviaciones e integridad de datos</small></div>
+</div>
+<div class="split"><section class="panel"><h2>Producción por hora</h2><canvas id="chart" width="880" height="270"></canvas><small>Se muestran únicamente lecturas recibidas de INTEQ. Intervalos sin datos aparecen sin barras.</small></section><section class="panel"><h2>Alertas y calidad de datos</h2><div id="warnings" class="muted">Esperando registros válidos del sincronizador.</div></section></div>
+<section class="panel"><h2>Estado de las líneas</h2><div class="scroll"><table><thead><tr><th>Línea</th><th>Última hora</th><th>Unidades</th><th>Meta / hora</th><th>Eficiencia</th><th>Ocupación</th><th>Paro (min)</th><th>Estado</th></tr></thead><tbody id="rows"></tbody></table></div></section>
+<section class="panel"><h2>Arquitectura de datos</h2><small>Grafana SQL Server (red TATA) → agente interno → Supabase (datos protegidos) → dashboard GitHub Pages. El mismo agente puede enviar un reporte a Power Automate para Teams y Outlook. Producción, ocupación y eficiencia son indicadores distintos; OEE completo requiere disponibilidad, rendimiento y calidad validados.</small></section>
+</main>
+<div id="modal" class="modal"><div class="panel"><div style="display:flex;align-items:center;justify-content:space-between"><h2>Metas por máquina</h2><button id="close">Cerrar</button></div><p class="muted">Solo administradores autorizados pueden guardar cambios. Las metas se expresan en unidades por hora.</p><div id="targetsForm"></div><p id="saveMsg" class="muted"></p><button class="primary" id="saveTargets">Guardar metas</button></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>
+"use strict";
+const URL="https://ezhlltgcqektrclgzhfi.supabase.co";
+const KEY="__SUPABASE_PUBLISHABLE_KEY__";
+const el=id=>document.getElementById(id),fmt=n=>n==null?"—":Number(n).toLocaleString("es-GT",{maximumFractionDigits:1});
+const machines=Array.from({length:11},(_,i)=>"Cantos_"+(i+1));
+let db=null,configs=[],data=[],isAdmin=false;
+function init(){if(KEY.startsWith("__")){el("authmsg").textContent="Falta configurar la clave pública de Supabase en este archivo.";return}
+ db=window.supabase.createClient(URL,KEY,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}});
+ db.auth.onAuthStateChange((_event,s)=>{setTimeout(()=>showSession(s),0)});db.auth.getSession().then(({data})=>showSession(data.session));
+}
+async function showSession(s){if(!s){el("auth").style.display="block";el("app").style.display="none";el("signout").style.display="none";return}
+ const mail=s.user.email||"";if(!mail.toLowerCase().endsWith("@tata.com.gt")){await db.auth.signOut();el("authmsg").textContent="Solo se admiten cuentas corporativas.";return}
+ el("auth").style.display="none";el("app").style.display="block";el("signout").style.display="inline-block";el("identity").textContent=mail;
+ const {data:admins}=await db.from("oc_admins").select("email").limit(1);isAdmin=!!admins?.length;el("targets").style.display=isAdmin?"inline-block":"none";
+ await load();
+}
+el("login").onclick=async()=>{if(!db)return;const email=el("email").value.trim().toLowerCase();if(!email.endsWith("@tata.com.gt")){el("authmsg").textContent="Utiliza tu correo TATA.";return}
+ el("login").disabled=true;const {error}=await db.auth.signInWithOtp({email,options:{emailRedirectTo:location.href.split("#")[0].split("?")[0]}});el("authmsg").textContent=error?error.message:"Revisa el correo: enviamos un enlace de acceso.";el("login").disabled=false};
+el("signout").onclick=()=>db.auth.signOut();
+async function load(){const h=Number(el("period").value),from=new Date(Date.now()-h*3600000).toISOString();
+ const [c,r]=await Promise.all([db.from("oc_machine_config").select("*").order("machine"),db.from("oc_machine_hourly").select("*").gte("slot",from).order("slot",{ascending:false}).limit(11000)]);
+ if(c.error||r.error){el("warningbar").textContent="Error de lectura: "+(c.error||r.error).message;return}
+ configs=c.data||[];data=r.data||[];el("update").textContent="Consulta: "+new Date().toLocaleString("es-GT");draw();
+}
+function draw(){const filter=el("machine").value,arr=data.filter(x=>filter==="all"||x.machine===filter),scope=filter==="all"?machines:[filter];
+ const good=arr.filter(x=>x.quality==="validado"&&x.units!=null),met=good.filter(x=>x.target_units>0);
+ const units=good.reduce((s,x)=>s+Number(x.units),0),target=met.reduce((s,x)=>s+Number(x.target_units),0),p=met.reduce((s,x)=>s+Number(x.units),0);
+ const weighted=good.filter(x=>x.occupancy_pct!=null&&x.idle_minutes!=null).map(x=>({x,w:Math.max(0,60-Number(x.idle_minutes))+Number(x.idle_minutes)}));
+ const occNumer=weighted.reduce((s,v)=>s+Number(v.x.occupancy_pct)*v.w,0),occDen=weighted.reduce((s,v)=>s+v.w,0);
+ const issue=arr.filter(x=>x.quality!=="validado"||["BAJO RENDIMIENTO","SIN PRODUCCIÓN REGISTRADA","OCUPACIÓN BAJA"].includes(x.state));
+ el("units").textContent=good.length?fmt(units):"—";el("eff").textContent=target?(p/target*100).toFixed(1)+"%":"—";
+ el("occupancy").textContent=occDen?(occNumer/occDen).toFixed(1)+"%":"—";
+ el("online").textContent=new Set(arr.map(x=>x.machine)).size+" / "+scope.length;
+ el("alerts").textContent=arr.length?String(issue.length):"—";
+ el("warningbar").textContent=arr.length?"":"Sin datos reales de INTEQ todavía. Esperando que se configure y valide el sincronizador local.";
+ const latest={};for(const r of arr){if(!latest[r.machine])latest[r.machine]=r}
+ el("rows").innerHTML=scope.map(m=>{const r=latest[m],cfg=configs.find(x=>x.machine===m);const state=r?.state||"SIN DATOS";
+ const color=state==="EN META"?"good":/BAJO|SIN PRODUCCIÓN/.test(state)?"bad": "warn";
+ return "<tr><td><b>"+m.replace("_"," ")+"</b></td><td>"+(r?new Date(r.slot).toLocaleString("es-GT"):"—")+"</td><td>"+fmt(r?.quality==="validado"?r.units:null)+"</td><td>"+fmt(cfg?.target_units)+"</td><td>"+(r?.quality==="validado"&&r.efficiency_pct!=null?fmt(r.efficiency_pct)+"%":"—")+"</td><td>"+(r?.occupancy_pct!=null?fmt(r.occupancy_pct)+"%":"—")+"</td><td>"+fmt(r?.idle_minutes)+"</td><td><span class='pill "+color+"'>"+state.replaceAll("<","&lt;")+"</span></td></tr>"}).join("");
+ el("warnings").textContent=issue.length?issue.slice(0,30).map(x=>x.machine+": "+x.state+" · "+(x.notes||"Revisar datos")).join("\n"):"No hay alertas registradas en el período.";el("warnings").style.whiteSpace="pre-line";
+ renderBars(good);
+}
+function renderBars(items){const c=el("chart"),ctx=c.getContext("2d");let w=c.width,h=c.height;ctx.clearRect(0,0,w,h);
+ ctx.fillStyle="#142536";ctx.fillRect(0,0,w,h);const bins={};for(const a of items){const k=a.slot;bins[k]=(bins[k]||0)+Number(a.units)}
+ const keys=Object.keys(bins).sort().slice(-24),max=Math.max(1,...keys.map(k=>bins[k]));ctx.strokeStyle="#31485a";ctx.fillStyle="#8fa6b8";ctx.font="12px Segoe UI";
+ for(let i=0;i<4;i++){let y=28+i*65;ctx.beginPath();ctx.moveTo(52,y);ctx.lineTo(w-12,y);ctx.stroke()}
+ if(!keys.length){ctx.textAlign="center";ctx.fillText("Sin datos verificados",w/2,h/2);return}
+ let slot=(w-65)/keys.length;keys.forEach((k,i)=>{let x=54+i*slot,bar=(bins[k]/max)*210;ctx.fillStyle="#55b9ed";ctx.fillRect(x,h-36-bar,Math.max(4,slot-6),bar);if(i%Math.max(1,Math.ceil(keys.length/9))===0){ctx.fillStyle="#9db4c9";ctx.fillText(new Date(k).toLocaleTimeString("es-GT",{hour:"2-digit",minute:"2-digit"}),x,h-12)}})
+}
+el("refresh").onclick=load;el("period").onchange=load;el("machine").onchange=draw;
+for(const m of machines){const o=document.createElement("option");o.value=m;o.textContent=m.replace("_"," ");el("machine").append(o)}
+el("targets").onclick=()=>{if(!isAdmin)return;el("targetsForm").replaceChildren();configs.forEach(c=>{let d=document.createElement("div");d.className="target-row";let l=document.createElement("label");l.textContent=c.machine.replace("_"," ");let inp=document.createElement("input");inp.className="field";inp.type="number";inp.min="1";inp.max="1000000";inp.placeholder="Sin meta";inp.value=c.target_units??"";inp.dataset.machine=c.machine;d.append(l,inp);el("targetsForm").append(d)});el("modal").style.display="flex"};
+el("close").onclick=()=>el("modal").style.display="none";
+el("saveTargets").onclick=async()=>{if(!isAdmin)return;el("saveTargets").disabled=true;el("saveMsg").textContent="Guardando...";
+ for(const inp of el("targetsForm").querySelectorAll("input")){const v=inp.value.trim(),n=v?Number(v):null;if(n!=null&&(!Number.isInteger(n)||n<=0||n>1000000)){el("saveMsg").textContent="Meta inválida para "+inp.dataset.machine;el("saveTargets").disabled=false;return}
+ const {error}=await db.from("oc_machine_config").update({target_units:n,updated_at:new Date().toISOString()}).eq("machine",inp.dataset.machine);if(error){el("saveMsg").textContent=error.message;el("saveTargets").disabled=false;return}}
+ el("saveMsg").textContent="Metas guardadas";el("saveTargets").disabled=false;await load();
+};
+init();
+</script></body></html>
