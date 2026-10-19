@@ -107,7 +107,7 @@ function draw(){
  const commIssues=selectedHealth.filter(x=>!x.last_seen_at||now-Date.parse(x.last_seen_at)>=10*60000);
  E("alerts").textContent=fresh?commIssues.length:"—";
  E("update").textContent=latestSync?"Último diagnóstico: "+loc(latestSync)+" · Consulta de pantalla: "+new Date().toLocaleTimeString("es-GT"):"Sin diagnósticos";
- E("warningbar").textContent=!latestSync?"Sin diagnósticos de comunicación cargados.":!fresh?"Datos históricos: última verificación hace "+duration(now-latestSync)+". No representan estado en vivo.": "Sincronización reciente · datos actualizados desde INTEQ.";
+ E("warningbar").textContent=!latestSync?"Sin diagnósticos de comunicación cargados.":!fresh?"Agente sin sincronización reciente: última verificación hace "+duration(now-latestSync)+". Estados históricos, no en vivo.":online.length===0?"Agente conectado y sincronizado · SIN lecturas recientes de INTEQ en las máquinas. La producción NO está confirmada.":"Agente conectado y sincronizado · "+online.length+" de "+scope.length+" máquina(s) con lecturas recientes de INTEQ.";
  const latest={};for(const p of selected)if(!latest[p.machine])latest[p.machine]=p;
  E("rows").replaceChildren();
  for(const m of scope){
