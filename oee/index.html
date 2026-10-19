@@ -46,7 +46,7 @@ async function getRows(table,columns,params=""){
  const endpoint=URL+"/rest/v1/"+table+"?select="+encodeURIComponent(columns)+params;
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),16000);
  try{
-  const response=await fetch(endpoint,{method:"GET",mode:"cors",cache:"no-store",signal:controller.signal,headers:{"apikey":KEY,"Authorization":"Bearer "+KEY,"Accept":"application/json"}});
+  const response=await fetch(endpoint,{method:"GET",mode:"cors",cache:"no-store",signal:controller.signal,headers:{"apikey":KEY,"Accept":"application/json"}});
   if(!response.ok){throw new Error("HTTP "+response.status+" al consultar "+table);}
   const data=await response.json();
   if(!Array.isArray(data))throw new Error("Respuesta inesperada de "+table);
