@@ -136,9 +136,9 @@
 
     <section class="summary">
       <article class="metric">
-        <div class="k">Producción validada</div>
+        <div class="k">Producción horaria validada</div>
         <div class="v" id="totalUnits">—</div>
-        <div class="d">Unidades con horas validadas dentro del rango seleccionado</div>
+        <div class="d">Pendiente de validación de cobertura y meta</div>
       </article>
       <article class="metric">
         <div class="k">Eficiencia promedio</div>
@@ -148,7 +148,7 @@
       <article class="metric">
         <div class="k">Ocupación promedio</div>
         <div class="v" id="avgOccupancy">—</div>
-        <div class="d">Promedio de ocupación reportada en el rango</div>
+        <div class="d">Ocupación observada en últimos datos disponibles</div>
       </article>
     </section>
 
@@ -180,7 +180,7 @@
       </aside>
     </section>
 
-    <div class="footer-note">Si una línea no tiene producción/eficiencia/ocupación visible, significa que esa información aún no está sincronizada o validada en Supabase. No debe interpretarse automáticamente como producción cero.</div>
+    <div class="footer-note">«Último contador» indica el valor más reciente conocido de INTEQ, que puede ser histórico; NO equivale a producción de la última hora. La ocupación es observada entre lecturas y también puede ser histórica. La eficiencia y producción horaria requieren validación adicional; «—» nunca significa producción cero.</div>
   </div>
 
   <script>
@@ -190,6 +190,7 @@
 
     let health=[];
     let hourly=[];
+    let telemetry=[];
     let busy=false;
 
     function gtDate(str){
@@ -304,7 +305,7 @@
       const valid=validHourly(scope.scopeHourly);
       const totalUnits=sum(valid,'units');
       const avgEff=avg(valid,'efficiency_pct');
-      const avgOcc=avg(scope.scopeHourly,'occupancy_pct');
+      const avgOcc=avg(telemetry.filter(t=>scope.machine==='ALL'||t.machine===scope.machine),'occupancy_pct');
       E('totalUnits').textContent=totalUnits===null?'—':num(totalUnits,0);
       E('avgEfficiency').textContent=avgEff===null?'—':pct(avgEff);
       E('avgOccupancy').textContent=avgOcc===null?'—':pct(avgOcc);
@@ -321,10 +322,12 @@
       grid.innerHTML='';
       const byHealth=new Map(scope.scopeHealth.map(r=>[r.machine,r]));
       const byHourly=latestHourlyByMachine(scope.scopeHourly);
+      const byTelemetry=new Map(telemetry.map(r=>[r.machine,r]));
       const machines=(scope.machine==='ALL'?getMachines():[scope.machine]);
       for(const m of machines){
         const h=byHealth.get(m) || {};
         const p=byHourly.get(m) || {};
+        const tele=byTelemetry.get(m)||{};
         const status=liveStatus(h);
         const card=document.createElement('article');
         card.className='machine';
@@ -338,8 +341,8 @@
           </div>
           <div class="triplet">
             <div class="mini-kpi">
-              <div class="label">Producción</div>
-              <div class="num">${p.quality==='validado' && p.units!=null ? num(p.units,0) : '—'}</div>
+              <div class="label">Último contador</div>
+              <div class="num">${tele.counter_cinchos!=null ? num(tele.counter_cinchos,0) : '—'}</div>
             </div>
             <div class="mini-kpi">
               <div class="label">Eficiencia</div>
@@ -347,7 +350,7 @@
             </div>
             <div class="mini-kpi">
               <div class="label">Ocupación</div>
-              <div class="num small">${p.occupancy_pct!=null ? pct(p.occupancy_pct) : '—'}</div>
+              <div class="num small">${tele.occupancy_pct!=null ? pct(tele.occupancy_pct) : (p.occupancy_pct!=null ? pct(p.occupancy_pct) : '—')}</div>
             </div>
           </div>
           <div class="foot">
@@ -432,11 +435,12 @@
         fillMachineOptions();
         const hours=Number(E('period').value);
         const from=periodStartISO(hours);
-        const [h,p]=await Promise.all([
+        const [h,p,t]=await Promise.all([
           getRows('oc_machine_health','machine,last_seen_at,checked_at,status,age_minutes'),
-          getRows('oc_machine_hourly','machine,slot,units,target_units,efficiency_pct,occupancy_pct,quality','&slot=gte.'+encodeURIComponent(from)+'&order=slot.desc&limit=3000')
+          getRows('oc_machine_hourly','machine,slot,units,target_units,efficiency_pct,occupancy_pct,quality','&slot=gte.'+encodeURIComponent(from)+'&order=slot.desc&limit=3000'),
+          getRows('oc_machine_telemetry','machine,last_seen_at,checked_at,counter_cinchos,occupancy_pct,coverage_minutes,status')
         ]);
-        health=h||[]; hourly=p||[];
+        health=h||[]; hourly=p||[]; telemetry=t||[];
         renderAll();
       }catch(err){
         E('machineGrid').replaceChildren();
