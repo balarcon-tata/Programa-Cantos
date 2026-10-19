@@ -81,10 +81,7 @@
         <div class="field">
           <label for="period">Rango</label>
           <select id="period">
-            <option value="1">Última 1 hora</option>
-            <option value="6" selected>Últimas 6 horas</option>
-            <option value="12">Últimas 12 horas</option>
-            <option value="24">Últimas 24 horas</option>
+            <option value="6" selected>Últimas 6 horas (Grafana)</option>
           </select>
         </div>
         <div class="field">
@@ -108,7 +105,7 @@
     </section>
 
     <div class="footer-note">
-      <strong>Nota:</strong> este panel toma los últimos valores sincronizados del agente en <code>oc_machine_telemetry</code>. Si una máquina está fuera del rango seleccionado, sus cuatro tarjetas muestran <em>No data</em>. Así se evita mezclar datos históricos con valores recientes. La ocupación puede diferir de Grafana porque se calcula con otra ventana de muestras; no son cifras intercambiables.
+      <strong>Nota:</strong> este panel toma los últimos valores sincronizados del agente en <code>oc_machine_telemetry</code>. Si una máquina está fuera del rango seleccionado, sus cuatro tarjetas muestran <em>No data</em>. Así se evita mezclar datos históricos con valores recientes. La ocupación se muestra únicamente cuando la V22 certifica el cálculo con la misma ventana de seis horas de Grafana, porque se calcula con otra ventana de muestras; no son cifras intercambiables.
     </div>
   </div>
 
@@ -171,6 +168,13 @@
       if(age <= hours*60) return 'SIN REPORTE RECIENTE';
       return 'DATOS ANTIGUOS';
     }
+    function grafanaWindowVerified(row){
+      if(!row?.occupancy_start_at||!row?.occupancy_end_at||!row?.checked_at)return false;
+      const start=Date.parse(row.occupancy_start_at),end=Date.parse(row.occupancy_end_at),checked=Date.parse(row.checked_at);
+      return Number.isFinite(start)&&Number.isFinite(end)&&Number.isFinite(checked)
+        && Math.abs((end-start)-21600000)<120000
+        && Math.abs(end-checked)<600000;
+    }
     function isInRange(row,hours){
       const age=ageMinutes(row?.last_seen_at);
       return age!==null && age>=0 && age<=hours*60;
@@ -182,7 +186,7 @@
       return (n/3600).toLocaleString('es-GT',{minimumFractionDigits:2,maximumFractionDigits:2});
     }
     async function getRows(){
-      const endpoint=`${URL}/rest/v1/oc_machine_telemetry?select=${encodeURIComponent('machine,checked_at,last_seen_at,status,counter_cinchos,ta_seg,ti_seg,occupancy_pct,coverage_minutes,observation_pairs')}&order=machine.asc`;
+      const endpoint=`${URL}/rest/v1/oc_machine_telemetry?select=${encodeURIComponent('machine,checked_at,last_seen_at,status,counter_cinchos,ta_seg,ti_seg,occupancy_pct,occupancy_start_at,occupancy_end_at,coverage_minutes,observation_pairs')}&order=machine.asc`;
       const res=await fetch(endpoint,{headers:{apikey:KEY,Accept:'application/json'},cache:'no-store'});
       if(!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
@@ -201,7 +205,7 @@
         const status=inferStatus(row,hours);
         if(status==='REPORTANDO') recent += 1;
 
-        const occ=within ? num(row?.occupancy_pct,1) : 'No data';
+        const occ=within && grafanaWindowVerified(row) ? num(row?.occupancy_pct,1) : 'No data';
         const cin=within ? num(row?.counter_cinchos,0) : 'No data';
         const ta=within ? fmtHoursFromSeconds(row?.ta_seg) : null;
         const ti=within ? fmtHoursFromSeconds(row?.ti_seg) : null;
@@ -235,7 +239,7 @@
             </div>
           </div>
           <div class="legend">
-            <div>Ocupación estimada por el agente; puede diferir de Grafana.</div>
+            <div>Ocupación calculada con el mismo SQL de Grafana (últimas 6 horas).</div>
             <div>Último contador observado en la máquina.</div>
             <div>Acumulado TA del último registro sincronizado.</div>
             <div>Acumulado TI del último registro sincronizado.</div>
