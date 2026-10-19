@@ -1,167 +1,278 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0c1118">
-<title>TATA | Monitor de Cantos</title>
-<style>
-:root{color-scheme:dark;--background:#0c1118;--surface:#171e27;--line:#303b47;--text:#f0f5fa;--muted:#9aabba;--blue:#3076dc;--green:#4e994d;--green2:#65b358;--warn:#ffce82;--red:#ffb0af;--empty:#242c37}
-*{box-sizing:border-box}body{margin:0;background:var(--background);color:var(--text);font:15px/1.45 "Segoe UI",Arial,sans-serif}button,select{font:inherit}
-.shell{max-width:1900px;margin:auto;padding:18px clamp(14px,1.8vw,36px) 44px}
-.header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;padding-bottom:17px;border-bottom:1px solid #27333e}
-.logo{font-size:clamp(26px,3vw,37px);letter-spacing:-.055em;font-weight:800;line-height:1.1;margin:0}.logo span{color:#51b8ff}
-.sub{margin:7px 0 0;color:var(--muted);font-size:13px}
-.sync{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted);padding-top:6px}
-.dot{width:8px;height:8px;border-radius:50%;display:inline-block;background:#8293a4}
-.dot.ok{background:#59c581}.dot.bad{background:#ffb26f}
-.controls{display:flex;align-items:end;gap:12px;flex-wrap:wrap;padding:17px 0}
-.control{display:flex;flex-direction:column;gap:5px;min-width:170px}
-.control label{font-size:11px;letter-spacing:.1em;font-weight:700;text-transform:uppercase;color:#b5c7d5}
-select,button{min-height:40px;border-radius:8px;padding:8px 12px;background:#192737;border:1px solid #37506a;color:#f1f8ff}
-button{background:#2e9ae1;border-color:#2e9ae1;color:#06131d;font-weight:700;cursor:pointer}
-button:hover{filter:brightness(1.08)}button:disabled{opacity:.55;cursor:wait}
-.control-small{min-width:150px}.controls .stretch{flex:1}
-.control-button{display:flex;align-items:end}.control-button button{min-width:130px}
-.message{display:none;padding:10px 13px;margin-bottom:14px;border:1px solid #654c30;border-radius:9px;background:#292218;color:#ffd8a1;font-size:13px}
-.message.show{display:block}
-.machine-list{display:flex;flex-direction:column;gap:14px}
-.machine{border:1px solid #28333d;border-radius:12px;background:#111923;overflow:hidden}
-.machine-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:9px;padding:12px 15px;background:#141c26}
-.machine-title{display:flex;align-items:center;gap:9px;min-width:0}
-.machine-title h2{font-size:16px;margin:0;font-weight:750;letter-spacing:-.02em}
-.indicator{width:9px;height:9px;border-radius:50%;background:#6f8193;flex-shrink:0}
-.indicator.good{background:#54bd83}.indicator.warn{background:#ffba63}.indicator.bad{background:#e88080}
-.machine-meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap;color:#aebdca;font-size:12px}
-.state{border-radius:100px;padding:4px 9px;border:1px solid #455461;background:#24303d;color:#c9d7e3;font-size:10px;letter-spacing:.04em;font-weight:800;text-transform:uppercase}
-.state.good{color:#9ee1b9;border-color:#345e46;background:#1a3124}
-.state.warn{color:#ffd596;border-color:#695132;background:#342819}
-.state.bad{color:#ffc4bf;border-color:#61383c;background:#36242a}
-.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:0 7px 7px}
-.metric{min-width:0;border-radius:5px;overflow:hidden;background:#223342}
-.metric-label{padding:8px 10px;background:#1d2630;color:#d5e0ea;font-weight:700;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.metric-value{display:flex;justify-content:center;align-items:center;min-height:104px;padding:13px 8px;font-weight:750;font-size:clamp(26px,3.5vw,52px);line-height:1.1;letter-spacing:-.04em;text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}
-.metric-value .unit{font-size:.42em;letter-spacing:0;margin-left:5px}
-.metric.occupancy .metric-value{background:linear-gradient(110deg,#398d42,#69b257)}
-.metric.counter .metric-value{background:linear-gradient(110deg,#1e50d0,#398ef3)}
-.metric.active .metric-value{background:linear-gradient(110deg,#418f54,#77b65d)}
-.metric.idle .metric-value{background:linear-gradient(110deg,#4b984e,#7ab565)}
-.metric.nodata .metric-value{background:#27313c;color:#c8d2dc;font-size:clamp(21px,3vw,36px);font-weight:600;letter-spacing:-.015em}
-.metric.nodata .metric-label{background:#222b35}
-.empty-note{margin:14px 0;color:var(--muted);text-align:center;font-size:13px}
-.footer{margin-top:20px;border-top:1px solid #27333e;padding-top:14px;color:#90a4b4;font-size:12px}
-@media(max-width:850px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.metric-value{min-height:90px;font-size:clamp(28px,6vw,45px)}}
-@media(max-width:460px){.shell{padding:14px 10px}.machine-head{padding:12px}.metrics{gap:5px;padding:0 5px 5px}.metric-value{min-height:78px;font-size:32px}.metric-label{font-size:11px}.control{flex:1;min-width:135px}.control-button button{min-width:100px}.machine-meta{gap:6px}}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TATA | OEE Cantos</title>
+  <style>
+    :root{
+      color-scheme:dark;
+      --bg:#0a0f18;
+      --panel:#141b24;
+      --panel-border:#2a3441;
+      --text:#eef4fb;
+      --muted:#9fb0c0;
+      --tile-blue-1:#1c4fe0;
+      --tile-blue-2:#4ea3f6;
+      --tile-green-1:#4da646;
+      --tile-green-2:#73bf59;
+      --tile-red-1:#f51843;
+      --tile-red-2:#ff3b5c;
+      --toolbar:#101722;
+      --shadow:0 14px 32px rgba(0,0,0,.28);
+      --radius:14px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font:15px/1.45 "Segoe UI",Arial,sans-serif}
+    .wrap{max-width:1920px;margin:0 auto;padding:16px 18px 28px}
+    .topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid #212b37}
+    h1{margin:0;font-size:clamp(30px,3vw,44px);letter-spacing:-.05em;font-weight:800}
+    h1 span{color:#59bdf8}
+    .sub{margin:8px 0 0;color:var(--muted)}
+    .meta{color:var(--muted);font-size:13px;text-align:right}
+    .toolbar{display:flex;justify-content:space-between;align-items:end;gap:14px;flex-wrap:wrap;background:var(--toolbar);border:1px solid var(--panel-border);border-radius:16px;padding:16px;margin:16px 0 18px;box-shadow:var(--shadow)}
+    .controls{display:flex;gap:12px;flex-wrap:wrap}
+    .field{display:flex;flex-direction:column;gap:6px;min-width:180px}
+    .field label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;font-weight:700}
+    select,button{min-height:44px;border-radius:10px;border:1px solid #314050;background:#162332;color:var(--text);padding:0 14px;font:600 15px "Segoe UI",Arial,sans-serif}
+    button{cursor:pointer;background:#2f8dd6;border-color:#2f8dd6;color:#08131c;min-width:140px}
+    button:hover{filter:brightness(1.05)}
+    .toolbar-note{font-size:13px;color:var(--muted)}
+    .status-note{margin:0 0 16px;color:#f6c16d;font-size:14px}
+    .machine-list{display:grid;gap:18px}
+    .machine{display:grid;gap:8px}
+    .machine-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .machine-title{font-size:15px;font-weight:800;letter-spacing:-.02em}
+    .machine-meta{font-size:12px;color:var(--muted)}
+    .state{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;border:1px solid #455262;background:#212c37;color:#d2dbe4}
+    .state.good{background:#163323;border-color:#25583c;color:#aef1c8}
+    .state.warn{background:#382b16;border-color:#6e5630;color:#ffd89a}
+    .state.bad{background:#382127;border-color:#69414b;color:#ffb8c2}
+    .tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+    .tile{border:1px solid var(--panel-border);border-radius:4px;overflow:hidden;background:var(--panel);min-width:0;box-shadow:var(--shadow)}
+    .tile-label{padding:8px 10px;background:#161d26;font-size:13px;font-weight:700;color:#d8e2ec;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .tile-value{display:flex;align-items:center;justify-content:center;min-height:100px;padding:12px 10px;text-align:center;font-size:clamp(34px,4vw,68px);font-weight:300;letter-spacing:-.04em;line-height:1}
+    .tile small{font-size:.45em;margin-left:6px;font-weight:500}
+    .tile.green .tile-value{background:linear-gradient(90deg,var(--tile-green-1),var(--tile-green-2))}
+    .tile.blue .tile-value{background:linear-gradient(90deg,var(--tile-blue-1),var(--tile-blue-2))}
+    .tile.red .tile-value{background:linear-gradient(90deg,var(--tile-red-1),var(--tile-red-2))}
+    .tile.empty .tile-value{font-size:clamp(28px,3vw,56px);font-weight:300}
+    .tile.red.empty .tile-value{font-size:0}
+    .tile.red.empty .tile-value::after{content:"No data";font-size:clamp(28px,3vw,56px)}
+    .legend{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;color:var(--muted);font-size:12px;margin-top:2px}
+    .legend div{padding:0 4px}
+    .footer-note{margin-top:18px;padding:12px 14px;border-radius:12px;background:#101722;border:1px solid #283341;color:var(--muted);font-size:13px}
+    @media (max-width:980px){.tiles,.legend{grid-template-columns:repeat(2,minmax(0,1fr))}.tile-value{min-height:88px}}
+    @media (max-width:560px){.wrap{padding:12px 10px 22px}.toolbar{padding:12px}.field{min-width:140px;flex:1}.controls{width:100%}.tiles,.legend{grid-template-columns:1fr}.tile-value{min-height:78px;font-size:42px}.meta{text-align:left}}
+  </style>
 </head>
 <body>
-<main class="shell">
-  <header class="header">
-    <div><h1 class="logo">TATA <span>| Monitor de Cantos</span></h1><p class="sub">11 líneas · Ocupación · Cinchos · Tiempo activo · Tiempo inactivo</p></div>
-    <div class="sync"><span id="syncDot" class="dot"></span><span id="syncLabel">Conectando con INTEQ…</span></div>
-  </header>
-  <nav class="controls" aria-label="Filtros del monitor">
-    <div class="control control-small"><label for="range">Rango</label><select id="range"><option value="6">Últimas 6 horas</option><option value="12">Últimas 12 horas</option><option value="24">Últimas 24 horas</option><option value="48">Últimas 48 horas</option></select></div>
-    <div class="control"><label for="machine">Máquina</label><select id="machine"><option value="all">Todas las máquinas</option></select></div>
-    <div class="stretch"></div>
-    <div class="control-button"><button type="button" id="refresh">Actualizar</button></div>
-  </nav>
-  <div id="error" class="message" role="status" aria-live="polite"></div>
-  <section class="machine-list" id="machines" aria-label="Indicadores de Cantos"><div class="empty-note">Cargando máquinas…</div></section>
-  <footer class="footer">Los valores se obtienen de los últimos registros de INTEQ sincronizados por el agente. «Cinchos» es el último contador observado, no una suma horaria ni una meta. Ocupación es la calculada por el agente a partir de lecturas; puede diferir del valor de Grafana según el período utilizado. Los tiempos TA y TI son los últimos acumulados. «No data» significa que no hay lectura en el rango seleccionado; no equivale a producción cero.</footer>
-</main>
-<script>
-"use strict";
-const URL="https://ezhlltgcqektrclgzhfi.supabase.co",KEY="sb_publishable_QnmVt7kK6LTX6HqY3eJcUg_wTN-O6Hp";
-const D=id=>document.getElementById(id);
-const N=Array.from({length:11},(_,i)=>"Cantos_"+(i+1));
-const fmt=new Intl.NumberFormat("es-GT",{maximumFractionDigits:1});
-const nowMs=()=>Date.now();
-let records=[],loading=false,lastError="";
-N.forEach(m=>{const o=document.createElement("option");o.value=m;o.textContent=m.replace("_"," ");D("machine").appendChild(o)});
-function timeText(t){if(!t)return "Sin registros";const d=new Date(t);return Number.isNaN(d.getTime())?"Sin registros":d.toLocaleString("es-GT",{timeZone:"America/Guatemala",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}
-function minutesAgo(t){if(!t)return null;const ms=nowMs()-Date.parse(t);return Number.isFinite(ms)?Math.floor(ms/60000):null}
-function numOrNull(v){if(v===null||v===undefined||v==="")return null;const n=Number(v);return Number.isFinite(n)?n:null}
-function formatCounter(n){return n===null?null:fmt.format(n)}
-function formatPct(n){return n===null?null:fmt.format(n)+"%"}
-function formatHours(n){return n===null?null:(n/3600).toLocaleString("es-GT",{minimumFractionDigits:2,maximumFractionDigits:2})+" h"}
-function statusFor(record,isWithin){
- if(!record||!record.last_seen_at)return {text:"Sin registros",tone:"bad"};
- if(!isWithin)return {text:"Fuera del rango",tone:"bad"};
- const age=minutesAgo(record.last_seen_at);
- if(age===null||age< -5)return {text:"Revisar fecha",tone:"bad"};
- if(age<10)return {text:"Reportando",tone:"good"};
- return {text:"Lectura histórica",tone:"warn"};
-}
-function el(tag,className,text){const e=document.createElement(tag);if(className)e.className=className;if(text!==undefined)e.textContent=text;return e}
-function metric(label,kind,value,unit){
- const card=el("div","metric "+kind+(value===null?" nodata":""));
- card.appendChild(el("div","metric-label",label));
- const n=el("div","metric-value");
- if(value===null)n.textContent="No data";
- else if(unit){const arr=el("span","",String(value));n.appendChild(arr);n.appendChild(el("span","unit",unit))}
- else n.textContent=String(value);
- card.appendChild(n);return card;
-}
-function render(){
- const h=Number(D("range").value),selected=D("machine").value;
- const base=el("div");const dict=new Map(records.map(r=>[r.machine,r]));
- const names=selected==="all"?N:[selected];
- for(const name of names){
-  const r=dict.get(name),last=r?.last_seen_at||null;
-  const age=minutesAgo(last),within=age!==null&&age>=-5&&age<=h*60;
-  const st=statusFor(r,within);
-  const section=el("article","machine");
-  const head=el("div","machine-head");
-  const title=el("div","machine-title");
-  title.appendChild(el("span","indicator "+st.tone));
-  title.appendChild(el("h2","",name.replace("_"," ")));
-  head.appendChild(title);
-  const meta=el("div","machine-meta");
-  meta.appendChild(el("span","",within?"Última lectura: "+timeText(last):last?"Último registro: "+timeText(last):"Sin historial"));
-  meta.appendChild(el("span","state "+st.tone,st.text));
-  head.appendChild(meta);section.appendChild(head);
-  const values=el("div","metrics");
-  const occ=within?numOrNull(r.occupancy_pct):null;
-  const cin=within?numOrNull(r.counter_cinchos):null;
-  const ta=within?numOrNull(r.ta_seg):null;
-  const ti=within?numOrNull(r.ti_seg):null;
-  values.appendChild(metric("Ocupación %","occupancy",occ===null?null:fmt.format(occ),occ===null?null:"%"));
-  values.appendChild(metric("Cinchos (contador)","counter",formatCounter(cin)));
-  values.appendChild(metric("Tiempo Activo (TA)","active",ta===null?null:(ta/3600).toLocaleString("es-GT",{minimumFractionDigits:2,maximumFractionDigits:2}),ta===null?null:"h"));
-  values.appendChild(metric("Tiempo Inactivo (TI)","idle",ti===null?null:(ti/3600).toLocaleString("es-GT",{minimumFractionDigits:2,maximumFractionDigits:2}),ti===null?null:"h"));
-  section.appendChild(values);base.appendChild(section);
- }
- D("machines").replaceChildren(...base.childNodes);
-}
-async function refresh(){
- if(loading)return;loading=true;D("refresh").disabled=true;
- try{
-  const ctl=new AbortController();const id=setTimeout(()=>ctl.abort(),15000);
-  let response;
-  try{response=await fetch(URL+"/rest/v1/oc_machine_telemetry?select=machine,last_seen_at,checked_at,counter_cinchos,occupancy_pct,ta_seg,ti_seg,status&limit=20",{headers:{apikey:KEY,Accept:"application/json"},cache:"no-store",signal:ctl.signal})}finally{clearTimeout(id)}
-  if(!response.ok)throw Error("HTTP "+response.status);
-  const data=await response.json();if(!Array.isArray(data))throw Error("Respuesta inesperada");
-  records=data;
-  const latest=Math.max(0,...records.map(r=>Date.parse(r.checked_at)||0));
-  const lag=latest?Math.floor((nowMs()-latest)/60000):null;
-  const synced=lag!==null&&lag>=-5&&lag<15;
-  D("syncDot").className="dot "+(synced?"ok":"bad");
-  D("syncLabel").textContent=latest?(synced?"Agente conectado":"Diagnóstico histórico")+" · Última sincronización: "+timeText(new Date(latest).toISOString()):"Sin registros de sincronización";
-  D("error").classList.remove("show");
-  lastError="";
-  render();
- }catch(e){
-  lastError=(e.name==="AbortError"?"Tiempo de espera agotado":e.message||"Error de red");
-  D("error").textContent="No se pudo actualizar Supabase ("+lastError+"). Se conservan los últimos valores cargados.";
-  D("error").classList.add("show");
-  D("syncDot").className="dot bad";
-  D("syncLabel").textContent="Conexión no verificada";
-  if(records.length)render();else D("machines").textContent="No se pudieron cargar las máquinas.";
- }finally{loading=false;D("refresh").disabled=false}
-}
-D("range").onchange=render;D("machine").onchange=render;D("refresh").onclick=refresh;
-refresh();setInterval(refresh,60000);setInterval(()=>{if(records.length)render()},15000);
-</script>
+  <div class="wrap">
+    <header class="topbar">
+      <div>
+        <h1>TATA <span>| OEE Cantos</span></h1>
+        <p class="sub">Vista simplificada estilo Grafana · Ocupación, cinchos, TA y TI</p>
+      </div>
+      <div class="meta" id="syncMeta">Sincronizando información…</div>
+    </header>
+
+    <section class="toolbar">
+      <div class="controls">
+        <div class="field">
+          <label for="period">Rango</label>
+          <select id="period">
+            <option value="1">Última 1 hora</option>
+            <option value="6" selected>Últimas 6 horas</option>
+            <option value="12">Últimas 12 horas</option>
+            <option value="24">Últimas 24 horas</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="machineFilter">Máquina</label>
+          <select id="machineFilter">
+            <option value="ALL">Todas las máquinas</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button id="refreshBtn">Actualizar</button>
+        </div>
+      </div>
+      <div class="toolbar-note">Lecturas de INTEQ sincronizadas a Supabase. Los valores pueden diferir si Grafana utiliza otro período.</div>
+    </section>
+
+    <p class="status-note" id="statusNote">Consultando registros...</p>
+
+    <section class="machine-list" id="machineList">
+      <div class="footer-note">Cargando máquinas…</div>
+    </section>
+
+    <div class="footer-note">
+      <strong>Nota:</strong> este panel toma los últimos valores sincronizados del agente en <code>oc_machine_telemetry</code>. Si una máquina está fuera del rango seleccionado, sus cuatro tarjetas muestran <em>No data</em>. Así se evita mezclar datos históricos con valores recientes. La ocupación puede diferir de Grafana porque se calcula con otra ventana de muestras; no son cifras intercambiables.
+    </div>
+  </div>
+
+  <script>
+    const URL='https://ezhlltgcqektrclgzhfi.supabase.co';
+    const KEY='sb_publishable_QnmVt7kK6LTX6HqY3eJcUg_wTN-O6Hp';
+    const E=id=>document.getElementById(id);
+    const MACHINES=Array.from({length:11},(_,i)=>`Cantos_${i+1}`);
+    let rows=[];
+    let busy=false;
+
+    function fillMachineOptions(){
+      const sel=E('machineFilter');
+      if(sel.options.length>1) return;
+      MACHINES.forEach(m=>{
+        const o=document.createElement('option');
+        o.value=m;
+        o.textContent=m.replace('_',' ');
+        sel.appendChild(o);
+      });
+    }
+    function gtDate(str){
+      if(!str) return 'Sin lectura';
+      const d=new Date(str);
+      if(Number.isNaN(d.getTime())) return 'Sin lectura';
+      return d.toLocaleString('es-GT',{timeZone:'America/Guatemala',year:'2-digit',month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'});
+    }
+    function num(v,dec=0){
+      if(v===null||v===undefined||v==='') return 'No data';
+      const n=Number(v);
+      if(!Number.isFinite(n)) return 'No data';
+      return n.toLocaleString('es-GT',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+    }
+    function ageMinutes(when){
+      if(!when) return null;
+      const ms=Date.now()-new Date(when).getTime();
+      return Number.isFinite(ms)?Math.floor(ms/60000):null;
+    }
+    function ageText(when){
+      const diff=ageMinutes(when);
+      if(diff===null) return 'Sin lectura';
+      if(diff < 0) return 'Revisar hora';
+      if(diff < 60) return `${diff} min`;
+      if(diff < 1440){
+        const h=Math.floor(diff/60), m=diff%60;
+        return `${h} h${m?` ${m} min`:''}`;
+      }
+      const d=Math.floor(diff/1440), h=Math.floor((diff%1440)/60);
+      return `${d} día(s)${h?` ${h} h`:''}`;
+    }
+    function stateClass(status){
+      if(status==='REPORTANDO') return 'good';
+      if(status==='SIN REPORTE RECIENTE') return 'warn';
+      return 'bad';
+    }
+    function inferStatus(row,hours){
+      const age=ageMinutes(row?.last_seen_at);
+      if(age===null) return 'DATOS ANTIGUOS';
+      if(age <= 10) return 'REPORTANDO';
+      if(age <= hours*60) return 'SIN REPORTE RECIENTE';
+      return 'DATOS ANTIGUOS';
+    }
+    function isInRange(row,hours){
+      const age=ageMinutes(row?.last_seen_at);
+      return age!==null && age>=0 && age<=hours*60;
+    }
+    function fmtHoursFromSeconds(sec){
+      if(sec===null||sec===undefined||sec==='') return null;
+      const n=Number(sec);
+      if(!Number.isFinite(n)) return null;
+      return (n/3600).toLocaleString('es-GT',{minimumFractionDigits:2,maximumFractionDigits:2});
+    }
+    async function getRows(){
+      const endpoint=`${URL}/rest/v1/oc_machine_telemetry?select=${encodeURIComponent('machine,checked_at,last_seen_at,status,counter_cinchos,ta_seg,ti_seg,occupancy_pct,coverage_minutes,observation_pairs')}&order=machine.asc`;
+      const res=await fetch(endpoint,{headers:{apikey:KEY,Accept:'application/json'},cache:'no-store'});
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    }
+    function render(){
+      const hours=Number(E('period').value);
+      const selected=E('machineFilter').value;
+      const host=E('machineList');
+      host.innerHTML='';
+      const map=new Map(rows.map(r=>[r.machine,r]));
+      const scope=(selected==='ALL'?MACHINES:[selected]);
+      let recent=0;
+      scope.forEach(machine=>{
+        const row=map.get(machine) || null;
+        const within=isInRange(row,hours);
+        const status=inferStatus(row,hours);
+        if(status==='REPORTANDO') recent += 1;
+
+        const occ=within ? num(row?.occupancy_pct,1) : 'No data';
+        const cin=within ? num(row?.counter_cinchos,0) : 'No data';
+        const ta=within ? fmtHoursFromSeconds(row?.ta_seg) : null;
+        const ti=within ? fmtHoursFromSeconds(row?.ti_seg) : null;
+
+        const article=document.createElement('article');
+        article.className='machine';
+        article.innerHTML=`
+          <div class="machine-head">
+            <div>
+              <div class="machine-title">🏭 ${machine}</div>
+              <div class="machine-meta">Última lectura INTEQ: ${gtDate(row?.last_seen_at)} · Tiempo sin reportar: ${ageText(row?.last_seen_at)}</div>
+            </div>
+            <span class="state ${stateClass(status)}">${status}</span>
+          </div>
+          <div class="tiles">
+            <div class="tile ${within && occ!=='No data' ? 'green' : 'red empty'}">
+              <div class="tile-label">ocupación %</div>
+              <div class="tile-value">${within && occ!=='No data' ? `${occ}<small>%</small>` : ''}</div>
+            </div>
+            <div class="tile ${within && cin!=='No data' ? 'blue' : 'blue empty'}">
+              <div class="tile-label">Cinchos del día</div>
+              <div class="tile-value">${within && cin!=='No data' ? cin : 'No data'}</div>
+            </div>
+            <div class="tile ${within && ta!==null ? 'green' : 'green empty'}">
+              <div class="tile-label">⏱ Tiempo Activo (TA)</div>
+              <div class="tile-value">${within && ta!==null ? `${ta}<small>hour</small>` : 'No data'}</div>
+            </div>
+            <div class="tile ${within && ti!==null ? 'green' : 'green empty'}">
+              <div class="tile-label">⏱ Tiempo Inactivo (TI)</div>
+              <div class="tile-value">${within && ti!==null ? `${ti}<small>hour</small>` : 'No data'}</div>
+            </div>
+          </div>
+          <div class="legend">
+            <div>Ocupación estimada por el agente; puede diferir de Grafana.</div>
+            <div>Último contador observado en la máquina.</div>
+            <div>Acumulado TA del último registro sincronizado.</div>
+            <div>Acumulado TI del último registro sincronizado.</div>
+          </div>`;
+        host.appendChild(article);
+      });
+
+      const latestCheck=rows.map(r=>r.checked_at).filter(Boolean).sort().at(-1);
+      E('syncMeta').textContent=`Última sincronización: ${latestCheck ? gtDate(latestCheck) : 'Sin dato'} · Actualiza cada minuto`;
+      E('statusNote').textContent=`${recent} de ${scope.length} línea(s) con lectura reciente en el rango seleccionado. Si una fila queda en No data, no se mezcla información histórica.`;
+
+      if(!scope.length){
+        host.innerHTML='<div class="footer-note">No hay líneas para mostrar.</div>';
+      }
+    }
+    async function load(){
+      if(busy) return;
+      busy=true;
+      E('statusNote').textContent='Consultando registros...';
+      try{
+        fillMachineOptions();
+        rows=await getRows();
+        render();
+      }catch(err){
+        E('machineList').innerHTML=`<div class="footer-note">No se pudo cargar la información: ${err.message}</div>`;
+        E('syncMeta').textContent='No se pudo cargar la sincronización.';
+        E('statusNote').textContent='Error al consultar Supabase.';
+      }finally{
+        busy=false;
+      }
+    }
+    E('refreshBtn').addEventListener('click',load);
+    E('period').addEventListener('change',render);
+    E('machineFilter').addEventListener('change',render);
+    load();
+    setInterval(load,60000);
+    setInterval(()=>{ if(rows.length) render(); },15000);
+  </script>
 </body>
 </html>
