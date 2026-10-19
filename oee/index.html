@@ -37,11 +37,27 @@ table{width:100%;border-collapse:collapse;min-width:850px;text-align:left}th{fon
 <div class="split"><section class="panel"><h2>Producción horaria verificada</h2><canvas id="chart" width="880" height="270"></canvas><small>Sin datos verificados, el gráfico permanece vacío: nunca se reemplazan con valores ficticios.</small></section><section class="panel"><h2>Información y alertas</h2><div id="warnings" class="muted">Consultando registros…</div></section></div>
 <section class="panel"><h2>Estado de las 11 líneas</h2><div class="scroll"><table><thead><tr><th>Línea</th><th>Comunicación</th><th>Última lectura INTEQ</th><th>Tiempo sin reportar</th><th>Producción horaria</th><th>Muestras</th><th>Reinicio</th></tr></thead><tbody id="rows"></tbody></table></div></section>
 <section class="panel"><h2>Sobre estos datos</h2><small>La página consulta Supabase cada 60 segundos. Los datos provienen del agente instalado en la PC TATA. Si la última sincronización está atrasada, los estados se presentan como históricos y no se afirma que una máquina esté reportando en este momento. Producción, eficiencia y ocupación no equivalen al OEE completo.</small></section>
-</main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</main>
 <script>
 "use strict";
 const URL="https://ezhlltgcqektrclgzhfi.supabase.co",KEY="sb_publishable_QnmVt7kK6LTX6HqY3eJcUg_wTN-O6Hp";
-const db=window.supabase.createClient(URL,KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+// Lectura pública sin dependencias externas, sin credenciales privadas.
+async function getRows(table,columns,params=""){
+ const endpoint=URL+"/rest/v1/"+table+"?select="+encodeURIComponent(columns)+params;
+ const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),16000);
+ try{
+  const response=await fetch(endpoint,{method:"GET",mode:"cors",cache:"no-store",signal:controller.signal,headers:{"apikey":KEY,"Authorization":"Bearer "+KEY,"Accept":"application/json"}});
+  if(!response.ok){throw new Error("HTTP "+response.status+" al consultar "+table);}
+  const data=await response.json();
+  if(!Array.isArray(data))throw new Error("Respuesta inesperada de "+table);
+  return data;
+ }finally{clearTimeout(timeout)}
+}
+function showError(message){
+ E("warningbar").textContent=message;
+ E("warnings").textContent=message;
+ E("update").textContent="No se pudo actualizar · Presiona Actualizar";
+}
 const E=id=>document.getElementById(id), machines=Array.from({length:11},(_,i)=>"Cantos_"+(i+1));
 const fmt=n=>n==null?"—":Number(n).toLocaleString("es-GT",{maximumFractionDigits:1});
 const loc=t=>t?new Date(t).toLocaleString("es-GT",{timeZone:"America/Guatemala",dateStyle:"short",timeStyle:"short"}):"Sin registros";
@@ -49,20 +65,31 @@ function duration(ms){if(!Number.isFinite(ms)||ms<0)return "—";const m=Math.fl
 for(const m of machines){const opt=document.createElement("option");opt.value=m;opt.textContent=m.replace("_"," ");E("machine").append(opt);}
 let health=[],hourly=[],configs=[],latestSync=null,requestBusy=false;
 async function load(){
- if(requestBusy)return;requestBusy=true;E("update").textContent="Consultando Supabase…";
- const from=new Date(Date.now()-Number(E("period").value)*3600000).toISOString();
+ if(requestBusy)return;
+ requestBusy=true;
+ E("update").textContent="Consultando Supabase…";
+ E("warningbar").textContent="";
  try{
-  const [h,c,p]=await Promise.all([
-    db.from("oc_machine_health").select("machine,last_seen_at,checked_at,status,age_minutes,sample_count,has_counter_reset"),
-    db.from("oc_machine_config").select("machine,target_units"),
-    db.from("oc_machine_hourly").select("machine,slot,units,target_units,efficiency_pct,occupancy_pct,idle_minutes,state,quality").gte("slot",from).order("slot",{ascending:false}).limit(2000)
+  // El estado de comunicación es prioritario: mostrarlo aunque falle el historial.
+  const rows=await getRows("oc_machine_health","machine,last_seen_at,checked_at,status,age_minutes,sample_count,has_counter_reset");
+  health=rows;
+  latestSync=Math.max(0,...rows.map(r=>Date.parse(r.checked_at)||0));
+  const from=new Date(Date.now()-Number(E("period").value)*3600000).toISOString();
+  const [c,p]=await Promise.allSettled([
+    getRows("oc_machine_config","machine,target_units"),
+    getRows("oc_machine_hourly","machine,slot,units,target_units,efficiency_pct,occupancy_pct,idle_minutes,state,quality","&slot=gte."+encodeURIComponent(from)+"&order=slot.desc&limit=2000")
   ]);
-  const err=h.error||c.error||p.error;if(err){E("warningbar").textContent="Error al consultar datos: "+err.message;return;}
-  health=h.data||[];configs=c.data||[];hourly=p.data||[];
-  latestSync=Math.max(0,...health.map(x=>Date.parse(x.checked_at)||0));
+  configs=c.status==="fulfilled"?c.value:[];
+  hourly=p.status==="fulfilled"?p.value:[];
   draw();
- }catch(e){E("warningbar").textContent="Sin conexión a Supabase: "+(e.message||"Revisa tu red.");}
- finally{requestBusy=false;}
+  if(c.status==="rejected"||p.status==="rejected"){
+    const messages=[c.status==="rejected"?"metas":"producción"];
+    E("warnings").textContent+="\\nAlgunos datos adicionales no pudieron cargarse; el estado de comunicación sigue disponible.";
+  }
+ }catch(err){
+  health=[];hourly=[];latestSync=null;
+  showError("No fue posible cargar los datos públicos de Supabase ("+(err.name==="AbortError"?"tiempo de espera agotado":err.message||"error de red")+"). Comprueba la conexión a supabase.co y pulsa Actualizar.");
+ }finally{requestBusy=false;}
 }
 function draw(){
  const now=Date.now(),filter=E("machine").value,scope=filter==="all"?machines:[filter];
