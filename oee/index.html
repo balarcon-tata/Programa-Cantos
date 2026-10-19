@@ -50,14 +50,14 @@
     .metric .k{font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:#8eb0c7;font-weight:800}
     .metric .v{margin:10px 0 6px;font-size:clamp(30px,4vw,44px);line-height:1;font-weight:800;letter-spacing:-.05em}
     .metric .d{color:var(--muted);font-size:13px}
-    .layout{display:grid;grid-template-columns:1.4fr .9fr;gap:16px}
+    .layout{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(320px,.95fr);gap:16px;align-items:start}
     .layout.no-data{grid-template-columns:1fr}
     .layout.no-data .right-stack{display:none}
     .panel{padding:18px}
     .panel h2{margin:0 0 6px;font-size:24px;letter-spacing:-.03em}
     .panel p.lead{margin:0 0 18px;color:var(--muted);font-size:14px}
-    .machine-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
-    .machine{background:linear-gradient(180deg,#122537,#0d1d2c);border:1px solid rgba(109,152,187,.18);border-radius:16px;padding:16px}
+    .machine-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:stretch}
+    .machine{background:linear-gradient(180deg,#122537,#0d1d2c);border:1px solid rgba(109,152,187,.18);border-radius:16px;padding:16px;min-width:0;overflow:hidden}
     .machine-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:14px}
     .machine h3{margin:0;font-size:20px;letter-spacing:-.03em}
     .machine .state{display:inline-flex;padding:7px 10px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
@@ -65,12 +65,12 @@
     .state.warn{background:rgba(247,185,85,.12);border:1px solid rgba(247,185,85,.28);color:#ffdba0}
     .state.bad{background:rgba(255,125,125,.14);border:1px solid rgba(255,125,125,.22);color:#ffb2b2}
     .state.neutral{background:rgba(154,178,196,.12);border:1px solid rgba(154,178,196,.18);color:#dbe8f2}
-    .triplet{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
-    .mini-kpi{background:#0b1825;border-radius:12px;padding:12px;border:1px solid rgba(109,152,187,.14)}
-    .mini-kpi .label{font-size:11px;color:#8eb0c7;text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px}
-    .mini-kpi .num{font-size:24px;font-weight:800;letter-spacing:-.04em}
-    .mini-kpi .num.small{font-size:18px}
-    .machine .foot{display:flex;justify-content:space-between;gap:10px;align-items:center;color:var(--muted);font-size:12px;border-top:1px solid rgba(109,152,187,.12);padding-top:10px}
+    .triplet{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px}
+    .mini-kpi{background:#0b1825;border-radius:12px;padding:12px;border:1px solid rgba(109,152,187,.14);min-width:0}
+    .mini-kpi .label{font-size:10px;color:#8eb0c7;text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .mini-kpi .num{font-size:22px;font-weight:800;letter-spacing:-.04em;line-height:1.1}
+    .mini-kpi .num.small{font-size:17px}
+    .machine .foot{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start;color:var(--muted);font-size:12px;border-top:1px solid rgba(109,152,187,.12);padding-top:10px}.machine .foot span:last-child{text-align:right}
     .bars{display:grid;gap:12px}
     .bar-row{display:grid;grid-template-columns:94px 1fr 72px;gap:10px;align-items:center}
     .bar-row .name{font-weight:700}
@@ -86,7 +86,9 @@
     .insight span{color:var(--muted);font-size:13px}
     .empty{padding:24px;border-radius:16px;background:#0b1825;border:1px dashed rgba(109,152,187,.22);color:var(--muted);text-align:center}
     .footer-note{margin-top:16px;padding:14px 16px;border-radius:14px;background:#0b1825;color:var(--muted);font-size:13px;border:1px solid rgba(109,152,187,.12)}
+    @media (max-width:1320px){.machine-grid{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}}
     @media (max-width:1100px){.hero,.layout{grid-template-columns:1fr}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media (max-width:900px){.triplet{grid-template-columns:1fr}.machine .foot{grid-template-columns:1fr}.machine .foot span:last-child{text-align:left}}
     @media (max-width:760px){.controls{grid-template-columns:1fr 1fr;}.summary{grid-template-columns:1fr}.triplet{grid-template-columns:1fr}.bar-row{grid-template-columns:1fr}.sync-note{text-align:left}}
   </style>
 </head>
