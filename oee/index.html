@@ -1,138 +1,458 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TATA | OEE Cantos</title><style>
-:root{color-scheme:dark;font-family:Inter,"Segoe UI",Arial,sans-serif;background:#080f18;color:#e9f2fc}
-*{box-sizing:border-box}body{margin:0}button,input,select{font:inherit}button{cursor:pointer}a{color:#7acaff}
-header{display:flex;align-items:center;justify-content:space-between;padding:24px max(24px,calc((100vw - 1500px)/2));border-bottom:1px solid #263749;background:#0b1420}
-h1{margin:0;font-size:clamp(24px,3vw,36px);letter-spacing:-1px}h1 span,.accent{color:#65bfff}
-small,.muted{color:#8ea5b8}.sub{margin:8px 0 0;color:#93a8ba;font-size:13px}
-main{max-width:1500px;margin:auto;padding:28px 24px} .bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:22px}
-button,.field{background:#142434;color:#e3f1ff;border:1px solid #2b4760;border-radius:10px;padding:11px 14px}
-button.primary{background:#319de6;border-color:#319de6;color:#081523;font-weight:700}button:disabled{opacity:.4}
-.field{min-width:155px} .grow{flex:1}
-.grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
-.card,.panel{background:#101d29;border:1px solid #243a4c;border-radius:15px;padding:20px;min-width:0}
-.k{font-size:11px;font-weight:800;letter-spacing:1.3px;color:#91a9bb;text-transform:uppercase}
-.value{font-size:32px;font-weight:750;margin:18px 0 5px}.panel{margin-top:18px}h2{font-size:17px;margin:0 0 14px}
-.split{display:grid;grid-template-columns:2fr 1fr;gap:18px}.scroll{overflow-x:auto}
-table{width:100%;border-collapse:collapse;min-width:850px;text-align:left}th{font-size:11px;color:#90a9bd;text-transform:uppercase;letter-spacing:1px}td,th{padding:15px 12px;border-bottom:1px solid #263c4d}td{font-size:13px}
-.pill{padding:5px 9px;border-radius:7px;background:#273746;color:#ccdceb;display:inline-block;font-size:11px;font-weight:700}
-.good{background:#124a38;color:#70e1ad}.bad{background:#502934;color:#ff93a7}.warn{background:#50391c;color:#ffcf83}
-.line{height:8px;border-radius:9px;background:#243748;overflow:hidden;margin-top:10px}.fill{height:100%;background:#56b9ed;max-width:100%}
-#auth{max-width:430px;margin:75px auto;text-align:center}.stack{display:grid;gap:13px}.stack input{width:100%}#app{display:block}
-#chart{width:100%;height:270px}#warnings{font-size:13px;line-height:1.7;max-height:320px;overflow:auto}#warningbar{margin:12px 0;color:#ffd09a}
-.modal{position:fixed;inset:0;background:#03070dcc;display:none;align-items:center;justify-content:center;padding:24px;z-index:10}
-.modal .panel{width:min(530px,100%);max-height:90vh;overflow:auto}.target-row{display:flex;align-items:center;gap:15px;justify-content:space-between;margin:8px 0}.target-row input{width:120px}
-@media(max-width:1050px){.grid{grid-template-columns:repeat(2,1fr)}.split{grid-template-columns:1fr}}
-@media(max-width:600px){.grid{grid-template-columns:1fr 1fr}.value{font-size:25px}header{padding:18px}main{padding:15px} .card{padding:14px}}
-</style></head><body><header><div><h1>TATA <span>| OEE Cantos</span></h1><p class="sub">Monitor público de comunicación y producción INTEQ · 11 máquinas</p></div><small>Acceso público · Solo lectura</small></header>
-<main id="app">
-<div class="bar"><select id="period" class="field"><option value="24">Últimas 24 horas</option><option value="8">Últimas 8 horas</option><option value="48">Últimas 48 horas</option><option value="168">Últimos 7 días</option></select><select id="machine" class="field"><option value="all">Todas las máquinas</option></select><div class="grow"></div><small id="update"></small><button id="refresh" class="primary">Actualizar</button></div>
-<div id="warningbar" role="status" aria-live="polite"></div>
-<div class="grid">
-<div class="card"><div class="k">Producción validada</div><div class="value" id="units">—</div><small>Unidades en horas con datos confiables</small></div>
-<div class="card"><div class="k">Eficiencia horaria</div><div class="value" id="eff">—</div><small>Solo si existen unidades y metas validadas</small></div>
-<div class="card"><div class="k">Ocupación</div><div class="value" id="occupancy">—</div><small>Horas con lecturas suficientes</small></div>
-<div class="card"><div class="k">Reportando ahora</div><div class="value" id="online">—</div><small>Última verificación reciente</small></div>
-<div class="card"><div class="k">Sin comunicación reciente</div><div class="value" id="alerts">—</div><small>No equivale a máquina detenida</small></div>
-</div>
-<div class="split"><section class="panel"><h2>Producción horaria verificada</h2><canvas id="chart" width="880" height="270"></canvas><small>Sin datos verificados, el gráfico permanece vacío: nunca se reemplazan con valores ficticios.</small></section><section class="panel"><h2>Información y alertas</h2><div id="warnings" class="muted">Consultando registros…</div></section></div>
-<section class="panel"><h2>Estado de las 11 líneas</h2><div class="scroll"><table><thead><tr><th>Línea</th><th>Comunicación</th><th>Última lectura INTEQ</th><th>Tiempo sin reportar</th><th>Producción horaria</th><th>Muestras</th><th>Reinicio</th></tr></thead><tbody id="rows"></tbody></table></div></section>
-<section class="panel"><h2>Sobre estos datos</h2><small>La página consulta Supabase cada 60 segundos. Los datos provienen del agente instalado en la PC TATA. Si la última sincronización está atrasada, los estados se presentan como históricos y no se afirma que una máquina esté reportando en este momento. Producción, eficiencia y ocupación no equivalen al OEE completo.</small></section>
-</main>
-<script>
-"use strict";
-const URL="https://ezhlltgcqektrclgzhfi.supabase.co",KEY="sb_publishable_QnmVt7kK6LTX6HqY3eJcUg_wTN-O6Hp";
-// Lectura pública sin dependencias externas, sin credenciales privadas.
-async function getRows(table,columns,params=""){
- const endpoint=URL+"/rest/v1/"+table+"?select="+encodeURIComponent(columns)+params;
- const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),16000);
- try{
-  const response=await fetch(endpoint,{method:"GET",mode:"cors",cache:"no-store",signal:controller.signal,headers:{"apikey":KEY,"Accept":"application/json"}});
-  if(!response.ok){throw new Error("HTTP "+response.status+" al consultar "+table);}
-  const data=await response.json();
-  if(!Array.isArray(data))throw new Error("Respuesta inesperada de "+table);
-  return data;
- }finally{clearTimeout(timeout)}
-}
-function showError(message){
- E("warningbar").textContent=message;
- E("warnings").textContent=message;
- E("update").textContent="No se pudo actualizar · Presiona Actualizar";
-}
-const E=id=>document.getElementById(id), machines=Array.from({length:11},(_,i)=>"Cantos_"+(i+1));
-const fmt=n=>n==null?"—":Number(n).toLocaleString("es-GT",{maximumFractionDigits:1});
-const loc=t=>t?new Date(t).toLocaleString("es-GT",{timeZone:"America/Guatemala",dateStyle:"short",timeStyle:"short"}):"Sin registros";
-function duration(ms){if(!Number.isFinite(ms)||ms<0)return "—";const m=Math.floor(ms/60000);if(m<60)return m+" min";const h=Math.floor(m/60),d=Math.floor(h/24);return d?d+" día(s) "+(h%24)+" h":h+" h "+(m%60)+" min";}
-for(const m of machines){const opt=document.createElement("option");opt.value=m;opt.textContent=m.replace("_"," ");E("machine").append(opt);}
-let health=[],hourly=[],configs=[],latestSync=null,requestBusy=false;
-async function load(){
- if(requestBusy)return;
- requestBusy=true;
- E("update").textContent="Consultando Supabase…";
- E("warningbar").textContent="";
- try{
-  // El estado de comunicación es prioritario: mostrarlo aunque falle el historial.
-  const rows=await getRows("oc_machine_health","machine,last_seen_at,checked_at,status,age_minutes,sample_count,has_counter_reset");
-  health=rows;
-  latestSync=Math.max(0,...rows.map(r=>Date.parse(r.checked_at)||0));
-  const from=new Date(Date.now()-Number(E("period").value)*3600000).toISOString();
-  const [c,p]=await Promise.allSettled([
-    getRows("oc_machine_config","machine,target_units"),
-    getRows("oc_machine_hourly","machine,slot,units,target_units,efficiency_pct,occupancy_pct,idle_minutes,state,quality","&slot=gte."+encodeURIComponent(from)+"&order=slot.desc&limit=2000")
-  ]);
-  configs=c.status==="fulfilled"?c.value:[];
-  hourly=p.status==="fulfilled"?p.value:[];
-  draw();
-  if(c.status==="rejected"||p.status==="rejected"){
-    const messages=[c.status==="rejected"?"metas":"producción"];
-    E("warnings").textContent+="\\nAlgunos datos adicionales no pudieron cargarse; el estado de comunicación sigue disponible.";
-  }
- }catch(err){
-  health=[];hourly=[];latestSync=null;
-  showError("No fue posible cargar los datos públicos de Supabase ("+(err.name==="AbortError"?"tiempo de espera agotado":err.message||"error de red")+"). Comprueba la conexión a supabase.co y pulsa Actualizar.");
- }finally{requestBusy=false;}
-}
-function draw(){
- const now=Date.now(),filter=E("machine").value,scope=filter==="all"?machines:[filter];
- const selected=hourly.filter(x=>scope.includes(x.machine)),valid=selected.filter(x=>x.quality==="validado"&&x.units!=null);
- const withTarget=valid.filter(x=>Number(x.target_units)>0);
- const units=valid.reduce((s,r)=>s+Number(r.units),0),target=withTarget.reduce((s,r)=>s+Number(r.target_units),0),relevant=withTarget.reduce((s,r)=>s+Number(r.units),0);
- const occ=valid.filter(x=>x.occupancy_pct!=null);
- E("units").textContent=valid.length?fmt(units):"—";
- E("eff").textContent=target?(100*relevant/target).toFixed(1)+"%":"—";
- E("occupancy").textContent=occ.length?(occ.reduce((s,r)=>s+Number(r.occupancy_pct),0)/occ.length).toFixed(1)+"%":"—";
- const fresh=latestSync&&now-latestSync<15*60000;
- const selectedHealth=scope.map(m=>health.find(x=>x.machine===m)).filter(Boolean);
- const online=selectedHealth.filter(x=>x.last_seen_at&&now-Date.parse(x.last_seen_at)<10*60000);
- E("online").textContent=fresh?online.length+" / "+scope.length:"—";
- const commIssues=selectedHealth.filter(x=>!x.last_seen_at||now-Date.parse(x.last_seen_at)>=10*60000);
- E("alerts").textContent=fresh?commIssues.length:"—";
- E("update").textContent=latestSync?"Último diagnóstico: "+loc(latestSync)+" · Consulta de pantalla: "+new Date().toLocaleTimeString("es-GT"):"Sin diagnósticos";
- E("warningbar").textContent=!latestSync?"Sin diagnósticos de comunicación cargados.":!fresh?"Agente sin sincronización reciente: última verificación hace "+duration(now-latestSync)+". Estados históricos, no en vivo.":online.length===0?"Agente conectado y sincronizado · SIN lecturas recientes de INTEQ en las máquinas. La producción NO está confirmada.":"Agente conectado y sincronizado · "+online.length+" de "+scope.length+" máquina(s) con lecturas recientes de INTEQ.";
- const latest={};for(const p of selected)if(!latest[p.machine])latest[p.machine]=p;
- E("rows").replaceChildren();
- for(const m of scope){
-  const h=health.find(x=>x.machine===m),p=latest[m],age=h?.last_seen_at?now-Date.parse(h.last_seen_at):NaN;
-  const status= !h?"SIN REGISTROS":!fresh? "DATOS HISTÓRICOS":age<10*60000?"REPORTANDO":age<180*60000?"SIN REPORTE RECIENTE":"DATOS ANTIGUOS";
-  const vals=[m.replace("_"," "),status,loc(h?.last_seen_at),duration(age),
-    p?.quality==="validado"&&p.units!=null?fmt(p.units)+" unidades":"Producción horaria aún no sincronizada",
-    h?.sample_count??"—",h?(h.has_counter_reset?"Sí":"No"):"—"];
-  const row=document.createElement("tr");
-  for(let i=0;i<vals.length;i++){const cell=document.createElement("td");cell.textContent=vals[i];if(i===1){let badge=document.createElement("span");badge.className="pill "+(status==="REPORTANDO"?"good":status==="DATOS ANTIGUOS"?"bad":"warn");badge.textContent=vals[i];cell.textContent="";cell.append(badge);}row.append(cell);}
-  E("rows").append(row);
- }
- const warnings=[];
- if(!fresh)warnings.push("El diagnóstico no es reciente; revisa la tarea programada de Windows.");
- if(commIssues.length)warnings.push(commIssues.length+" máquina(s) no tienen reportes INTEQ recientes. Esto no demuestra que estén detenidas.");
- if(!valid.length)warnings.push("El agente todavía NO envía a Supabase los contadores de cinchos ni la ocupación; por eso la producción horaria está pendiente. No significa cero unidades.");
- E("warnings").textContent=warnings.join("\n")||"No se detectaron advertencias en esta consulta.";E("warnings").style.whiteSpace="pre-line";
- const canvas=E("chart"),ctx=canvas.getContext("2d");ctx.clearRect(0,0,canvas.width,canvas.height);
- ctx.fillStyle="#132438";ctx.fillRect(0,0,canvas.width,canvas.height);
- if(!valid.length){ctx.fillStyle="#99b2c8";ctx.textAlign="center";ctx.font="17px Segoe UI";ctx.fillText("Sin horas de producción verificadas",canvas.width/2,canvas.height/2);return;}
- const bins={};for(const r of valid)bins[r.slot]=(bins[r.slot]||0)+Number(r.units);
- const keys=Object.keys(bins).sort().slice(-24),max=Math.max(1,...keys.map(k=>bins[k])),w=(canvas.width-60)/keys.length;
- keys.forEach((k,i)=>{const bar=(bins[k]/max)*205;ctx.fillStyle="#56b9ed";ctx.fillRect(50+i*w,canvas.height-36-bar,Math.max(3,w-5),bar);
- if(i%Math.max(1,Math.ceil(keys.length/8))===0){ctx.fillStyle="#9db4c9";ctx.font="12px Segoe UI";ctx.fillText(new Date(k).toLocaleTimeString("es-GT",{timeZone:"America/Guatemala",hour:"2-digit",minute:"2-digit"}),50+i*w,canvas.height-12)}});
-}
-E("refresh").onclick=load;E("period").onchange=load;E("machine").onchange=draw;
-load();setInterval(load,60000);setInterval(()=>{if(health.length)draw()},15000);
-</script></body></html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TATA | OEE Cantos</title>
+  <style>
+    :root{
+      color-scheme:dark;
+      --bg:#07111b;
+      --bg2:#0b1824;
+      --panel:#102131;
+      --panel-2:#0d1b29;
+      --line:#244157;
+      --text:#eef7ff;
+      --muted:#9ab2c4;
+      --blue:#59bdf8;
+      --blue-2:#2f8dd6;
+      --green:#34d399;
+      --amber:#f7b955;
+      --red:#ff7d7d;
+      --soft:#163048;
+      --shadow:0 14px 34px rgba(0,0,0,.22);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:linear-gradient(180deg,#07111b 0%,#081522 100%);color:var(--text);font:15px/1.45 "Segoe UI",Arial,sans-serif}
+    .wrap{max-width:1440px;margin:auto;padding:0 18px 28px}
+    header{padding:28px 0 18px;border-bottom:1px solid rgba(120,170,210,.18)}
+    h1{margin:0;font-size:clamp(30px,4vw,48px);letter-spacing:-.05em;font-weight:800}
+    h1 span{color:var(--blue)}
+    .sub{margin:8px 0 0;color:var(--muted);font-size:15px}
+    .topbar{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}
+    .sync-note{font-size:13px;color:var(--muted);text-align:right}
+    .hero{margin-top:20px;display:grid;grid-template-columns:1.4fr .9fr;gap:16px}
+    .glass,.panel,.metric,.banner{background:linear-gradient(180deg,rgba(16,33,49,.97),rgba(13,27,41,.97));border:1px solid rgba(109,152,187,.18);box-shadow:var(--shadow);border-radius:var(--radius)}
+    .banner{padding:18px 20px;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+    .banner strong{display:block;font-size:18px;margin-bottom:4px}
+    .banner .mini{font-size:13px;color:var(--muted)}
+    .status-badge{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;background:#102d22;border:1px solid rgba(52,211,153,.26);color:#a9f3d7;font-weight:700;font-size:13px}
+    .dot{width:10px;height:10px;border-radius:50%;background:currentColor;box-shadow:0 0 0 4px rgba(255,255,255,.06)}
+    .controls{padding:18px;display:grid;grid-template-columns:1fr auto auto auto;gap:12px;align-items:end}
+    .field label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px;text-transform:uppercase;letter-spacing:.12em}
+    select,button{width:100%;border-radius:12px;border:1px solid rgba(109,152,187,.22);background:#122638;color:var(--text);padding:14px 14px;font:600 15px "Segoe UI",Arial,sans-serif}
+    button{cursor:pointer;background:linear-gradient(180deg,#49b4f4,#2f8dd6);color:#07111b;border:none;min-width:150px}
+    button:hover{filter:brightness(1.04)}
+    .btn-secondary{background:#173146;color:#dff3ff;border:1px solid rgba(109,152,187,.25)}
+    .summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:18px 0}
+    .metric{padding:20px}
+    .metric .k{font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:#8eb0c7;font-weight:800}
+    .metric .v{margin:10px 0 6px;font-size:clamp(30px,4vw,44px);line-height:1;font-weight:800;letter-spacing:-.05em}
+    .metric .d{color:var(--muted);font-size:13px}
+    .layout{display:grid;grid-template-columns:1.4fr .9fr;gap:16px}
+    .layout.no-data{grid-template-columns:1fr}
+    .layout.no-data .right-stack{display:none}
+    .panel{padding:18px}
+    .panel h2{margin:0 0 6px;font-size:24px;letter-spacing:-.03em}
+    .panel p.lead{margin:0 0 18px;color:var(--muted);font-size:14px}
+    .machine-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+    .machine{background:linear-gradient(180deg,#122537,#0d1d2c);border:1px solid rgba(109,152,187,.18);border-radius:16px;padding:16px}
+    .machine-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:14px}
+    .machine h3{margin:0;font-size:20px;letter-spacing:-.03em}
+    .machine .state{display:inline-flex;padding:7px 10px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+    .state.good{background:rgba(52,211,153,.14);border:1px solid rgba(52,211,153,.28);color:#9bf0cf}
+    .state.warn{background:rgba(247,185,85,.12);border:1px solid rgba(247,185,85,.28);color:#ffdba0}
+    .state.bad{background:rgba(255,125,125,.14);border:1px solid rgba(255,125,125,.22);color:#ffb2b2}
+    .state.neutral{background:rgba(154,178,196,.12);border:1px solid rgba(154,178,196,.18);color:#dbe8f2}
+    .triplet{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+    .mini-kpi{background:#0b1825;border-radius:12px;padding:12px;border:1px solid rgba(109,152,187,.14)}
+    .mini-kpi .label{font-size:11px;color:#8eb0c7;text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px}
+    .mini-kpi .num{font-size:24px;font-weight:800;letter-spacing:-.04em}
+    .mini-kpi .num.small{font-size:18px}
+    .machine .foot{display:flex;justify-content:space-between;gap:10px;align-items:center;color:var(--muted);font-size:12px;border-top:1px solid rgba(109,152,187,.12);padding-top:10px}
+    .bars{display:grid;gap:12px}
+    .bar-row{display:grid;grid-template-columns:94px 1fr 72px;gap:10px;align-items:center}
+    .bar-row .name{font-weight:700}
+    .track{height:12px;border-radius:999px;background:#0b1825;border:1px solid rgba(109,152,187,.12);overflow:hidden}
+    .fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#4cc3ff,#2f8dd6)}
+    .fill.green{background:linear-gradient(90deg,#34d399,#1fbf87)}
+    .fill.amber{background:linear-gradient(90deg,#f7b955,#e79b22)}
+    .fill.red{background:linear-gradient(90deg,#ff8d8d,#ff6f6f)}
+    .right-stack{display:grid;gap:16px}
+    .insight-list{display:grid;gap:10px}
+    .insight{padding:12px 14px;border-radius:12px;background:#0b1825;border:1px solid rgba(109,152,187,.12)}
+    .insight strong{display:block;font-size:14px;margin-bottom:2px}
+    .insight span{color:var(--muted);font-size:13px}
+    .empty{padding:24px;border-radius:16px;background:#0b1825;border:1px dashed rgba(109,152,187,.22);color:var(--muted);text-align:center}
+    .footer-note{margin-top:16px;padding:14px 16px;border-radius:14px;background:#0b1825;color:var(--muted);font-size:13px;border:1px solid rgba(109,152,187,.12)}
+    @media (max-width:1100px){.hero,.layout{grid-template-columns:1fr}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media (max-width:760px){.controls{grid-template-columns:1fr 1fr;}.summary{grid-template-columns:1fr}.triplet{grid-template-columns:1fr}.bar-row{grid-template-columns:1fr}.sync-note{text-align:left}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="topbar">
+        <div>
+          <h1>TATA <span>| OEE Cantos</span></h1>
+          <p class="sub">Vista ejecutiva de producción, eficiencia y ocupación · Panel público de solo lectura</p>
+        </div>
+        <div class="sync-note" id="syncMeta">Cargando datos...</div>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="banner">
+        <div>
+          <strong>Dashboard simplificado</strong>
+          <div class="mini">Producción, eficiencia y ocupación de las 11 líneas, en una sola vista.</div>
+        </div>
+        <div class="status-badge" id="globalStatus"><span class="dot"></span><span>Sincronizando...</span></div>
+      </div>
+
+      <div class="glass controls">
+        <div class="field">
+          <label>Rango</label>
+          <select id="period">
+            <option value="8">Últimas 8 horas</option>
+            <option value="12">Últimas 12 horas</option>
+            <option value="24" selected>Últimas 24 horas</option>
+            <option value="48">Últimas 48 horas</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Máquina</label>
+          <select id="machineFilter">
+            <option value="ALL">Todas las máquinas</option>
+          </select>
+        </div>
+        <button id="refreshBtn">Actualizar</button>
+        <button id="resetBtn" class="btn-secondary">Ver todas</button>
+      </div>
+    </section>
+
+    <section class="summary">
+      <article class="metric">
+        <div class="k">Producción validada</div>
+        <div class="v" id="totalUnits">—</div>
+        <div class="d">Unidades con horas validadas dentro del rango seleccionado</div>
+      </article>
+      <article class="metric">
+        <div class="k">Eficiencia promedio</div>
+        <div class="v" id="avgEfficiency">—</div>
+        <div class="d">Promedio solo de horas con eficiencia disponible</div>
+      </article>
+      <article class="metric">
+        <div class="k">Ocupación promedio</div>
+        <div class="v" id="avgOccupancy">—</div>
+        <div class="d">Promedio de ocupación reportada en el rango</div>
+      </article>
+    </section>
+
+    <section class="layout">
+      <section class="panel">
+        <h2>Resumen por línea</h2>
+        <p class="lead">Enfocado solo en lo que importa: producción, eficiencia y ocupación.</p>
+        <div class="machine-grid" id="machineGrid">
+          <div class="empty">Consultando información...</div>
+        </div>
+      </section>
+
+      <aside class="right-stack">
+        <section class="panel">
+          <h2>Comparativo rápido</h2>
+          <p class="lead">Top del rango seleccionado.</p>
+          <div class="bars" id="barsArea">
+            <div class="empty">Cargando comparativos...</div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Lectura ejecutiva</h2>
+          <p class="lead">Interpretación simple del panel.</p>
+          <div class="insight-list" id="insights">
+            <div class="insight"><strong>Cargando...</strong><span>Preparando observaciones del dashboard.</span></div>
+          </div>
+        </section>
+      </aside>
+    </section>
+
+    <div class="footer-note">Si una línea no tiene producción/eficiencia/ocupación visible, significa que esa información aún no está sincronizada o validada en Supabase. No debe interpretarse automáticamente como producción cero.</div>
+  </div>
+
+  <script>
+    const URL='https://ezhlltgcqektrclgzhfi.supabase.co';
+    const KEY='sb_publishable_QnmVt7kK6LTX6HqY3eJcUg_wTN-O6Hp';
+    const E=id=>document.getElementById(id);
+
+    let health=[];
+    let hourly=[];
+    let busy=false;
+
+    function gtDate(str){
+      if(!str) return 'Sin lectura';
+      const d=new Date(str);
+      if(Number.isNaN(d.getTime())) return 'Sin lectura';
+      return d.toLocaleString('es-GT',{timeZone:'America/Guatemala',year:'2-digit',month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'});
+    }
+    function num(v,dec=0){
+      if(v===null||v===undefined||v==='') return '—';
+      const n=Number(v);
+      if(!Number.isFinite(n)) return '—';
+      return n.toLocaleString('es-GT',{maximumFractionDigits:dec,minimumFractionDigits:dec});
+    }
+    function pct(v){
+      if(v===null||v===undefined||v==='') return '—';
+      const n=Number(v);
+      if(!Number.isFinite(n)) return '—';
+      return num(n,1)+'%';
+    }
+    function ago(when){
+      if(!when) return 'Sin lectura';
+      const diff=Math.floor((Date.now()-new Date(when).getTime())/60000);
+      if(!Number.isFinite(diff)) return 'Sin lectura';
+      if(diff < -5) return 'Revisar hora';
+      if(diff < 60) return Math.max(diff,0)+' min';
+      if(diff < 1440){
+        const h=Math.floor(diff/60), m=diff%60;
+        return h+' h'+(m?(' '+m+' min'):'');
+      }
+      const d=Math.floor(diff/1440), h=Math.floor((diff%1440)/60);
+      return d+' día(s)'+(h?(' '+h+' h'):'');
+    }
+    function stateClass(status){
+      if(status==='REPORTANDO') return 'good';
+      if(status==='SIN REPORTE RECIENTE') return 'warn';
+      if(status==='DATOS ANTIGUOS') return 'bad';
+      return 'neutral';
+    }
+    function lastCheck(){
+      return health.map(r=>r.checked_at).filter(Boolean).sort().at(-1)||null;
+    }
+    function syncFresh(){
+      const t=lastCheck();
+      return t && (Date.now()-Date.parse(t)<15*60000) && (Date.now()-Date.parse(t)>-5*60000);
+    }
+    function liveStatus(r){
+      if(!r) return 'SIN DATO';
+      if(!syncFresh()) return 'DIAGNÓSTICO ANTIGUO';
+      if(!r.last_seen_at) return 'SIN DATOS';
+      const min=(Date.now()-Date.parse(r.last_seen_at))/60000;
+      if(min < -5) return 'REVISAR HORA';
+      if(min < 10) return 'REPORTANDO';
+      if(min < 180) return 'SIN REPORTE RECIENTE';
+      return 'DATOS ANTIGUOS';
+    }
+    function statusText(scopeHealth){
+      if(!syncFresh()) return ['Esperando diagnóstico reciente','neutral'];
+      const recent=scopeHealth.filter(x=>liveStatus(x)==='REPORTANDO').length;
+      const total=scopeHealth.length;
+      if(total===0) return ['Sin datos disponibles','neutral'];
+      if(recent===total) return ['Todas las líneas reportando','good'];
+      if(recent>0) return [recent+' de '+total+' línea(s) reportando','warn'];
+      return ['Sin líneas reportando recientemente','bad'];
+    }
+    async function getRows(table, columns, params=''){
+      const endpoint=`${URL}/rest/v1/${table}?select=${encodeURIComponent(columns)}${params}`;
+      const res=await fetch(endpoint,{headers:{apikey:KEY,Accept:'application/json'},cache:'no-store'});
+      if(!res.ok) throw new Error(`HTTP ${res.status} en ${table}`);
+      return await res.json();
+    }
+    function periodStartISO(hours){
+      return new Date(Date.now()-hours*3600*1000).toISOString();
+    }
+    function getMachines(){return Array.from({length:11},(_,i)=>`Cantos_${i+1}`)}
+    function fillMachineOptions(){
+      const sel=E('machineFilter');
+      if(sel.options.length>1) return;
+      for(const m of getMachines()){
+        const o=document.createElement('option');
+        o.value=m; o.textContent=m.replace('_',' ');
+        sel.appendChild(o);
+      }
+    }
+    function latestHourlyByMachine(scopeHourly){
+      const map=new Map();
+      const sorted=[...scopeHourly].sort((a,b)=>new Date(b.slot)-new Date(a.slot));
+      for(const row of sorted){ if(!map.has(row.machine)) map.set(row.machine,row); }
+      return map;
+    }
+    function validHourly(scopeHourly){
+      return scopeHourly.filter(r=>r && r.quality==='validado' && r.units!==null);
+    }
+    function avg(arr,key){
+      const vals=arr.map(x=>x[key]).filter(v=>v!==null && v!==undefined && v!=='').map(Number).filter(Number.isFinite);
+      if(!vals.length) return null;
+      return vals.reduce((a,b)=>a+b,0)/vals.length;
+    }
+    function sum(arr,key){
+      const vals=arr.map(x=>x[key]).filter(v=>v!==null && v!==undefined && v!=='').map(Number).filter(Number.isFinite);
+      if(!vals.length) return null;
+      return vals.reduce((a,b)=>a+b,0);
+    }
+    function currentScope(){
+      const machine=E('machineFilter').value;
+      const hours=Number(E('period').value);
+      const scopeHealth=health.filter(r=>machine==='ALL' || r.machine===machine);
+      const scopeHourly=hourly.filter(r=>machine==='ALL' || r.machine===machine);
+      return {machine,hours,scopeHealth,scopeHourly};
+    }
+    function renderSummary(scope){
+      const valid=validHourly(scope.scopeHourly);
+      const totalUnits=sum(valid,'units');
+      const avgEff=avg(valid,'efficiency_pct');
+      const avgOcc=avg(scope.scopeHourly,'occupancy_pct');
+      E('totalUnits').textContent=totalUnits===null?'—':num(totalUnits,0);
+      E('avgEfficiency').textContent=avgEff===null?'—':pct(avgEff);
+      E('avgOccupancy').textContent=avgOcc===null?'—':pct(avgOcc);
+
+      const [txt,klass]=statusText(scope.scopeHealth);
+      E('globalStatus').className='status-badge';
+      E('globalStatus').style.background=klass==='good'?'#102d22':klass==='warn'?'#302715':'#30191c';
+      E('globalStatus').style.borderColor=klass==='good'?'rgba(52,211,153,.26)':klass==='warn'?'rgba(247,185,85,.26)':'rgba(255,125,125,.22)';
+      E('globalStatus').style.color=klass==='good'?'#a9f3d7':klass==='warn'?'#ffdba0':'#ffb2b2';
+      E('globalStatus').innerHTML=`<span class="dot"></span><span>${txt}</span>`;
+    }
+    function renderMachines(scope){
+      const grid=E('machineGrid');
+      grid.innerHTML='';
+      const byHealth=new Map(scope.scopeHealth.map(r=>[r.machine,r]));
+      const byHourly=latestHourlyByMachine(scope.scopeHourly);
+      const machines=(scope.machine==='ALL'?getMachines():[scope.machine]);
+      for(const m of machines){
+        const h=byHealth.get(m) || {};
+        const p=byHourly.get(m) || {};
+        const status=liveStatus(h);
+        const card=document.createElement('article');
+        card.className='machine';
+        card.innerHTML=`
+          <div class="machine-head">
+            <div>
+              <h3>${m.replace('_',' ')}</h3>
+              <div style="color:var(--muted);font-size:12px;margin-top:4px;">Última lectura: ${gtDate(h.last_seen_at)}</div>
+            </div>
+            <span class="state ${stateClass(status)}">${status}</span>
+          </div>
+          <div class="triplet">
+            <div class="mini-kpi">
+              <div class="label">Producción</div>
+              <div class="num">${p.quality==='validado' && p.units!=null ? num(p.units,0) : '—'}</div>
+            </div>
+            <div class="mini-kpi">
+              <div class="label">Eficiencia</div>
+              <div class="num small">${p.quality==='validado' && p.efficiency_pct!=null ? pct(p.efficiency_pct) : '—'}</div>
+            </div>
+            <div class="mini-kpi">
+              <div class="label">Ocupación</div>
+              <div class="num small">${p.occupancy_pct!=null ? pct(p.occupancy_pct) : '—'}</div>
+            </div>
+          </div>
+          <div class="foot">
+            <span>Tiempo sin reportar: ${ago(h.last_seen_at)}</span>
+            <span>${p.slot ? 'Hora: '+gtDate(p.slot) : 'Sin hora validada'}</span>
+          </div>`;
+        grid.appendChild(card);
+      }
+      if(!grid.children.length) grid.innerHTML='<div class="empty">No hay líneas para mostrar.</div>';
+    }
+    function renderBars(scope){
+      const area=E('barsArea');
+      area.innerHTML='';
+      const valid=validHourly(scope.scopeHourly);
+      if(!valid.length){
+        document.querySelector('.layout').classList.add('no-data');
+        area.innerHTML='<div class="empty">Sin horas de producción validada para comparar.</div>';
+        return;
+      }
+      document.querySelector('.layout').classList.remove('no-data');
+      const latest=latestHourlyByMachine(valid);
+      const arr=[...latest.values()];
+      const maxUnits=Math.max(...arr.map(r=>Number(r.units)||0),1);
+      const maxEff=Math.max(...arr.map(r=>Number(r.efficiency_pct)||0),1);
+      const maxOcc=Math.max(...arr.map(r=>Number(r.occupancy_pct)||0),1);
+
+      function block(title,key,max,colorClass,fmt){
+        const wrap=document.createElement('div');
+        wrap.innerHTML=`<div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.14em;margin:2px 0 8px;font-weight:800">${title}</div>`;
+        arr.sort((a,b)=>(Number(b[key])||0)-(Number(a[key])||0)).slice(0,5).forEach(r=>{
+          const row=document.createElement('div');
+          row.className='bar-row';
+          const pctVal=Math.max(0,Math.min(100,((Number(r[key])||0)/max)*100));
+          row.innerHTML=`<div class="name">${r.machine.replace('_',' ')}</div><div class="track"><div class="fill ${colorClass}" style="width:${pctVal}%"></div></div><div style="text-align:right;font-weight:700">${fmt(r[key])}</div>`;
+          wrap.appendChild(row);
+        });
+        area.appendChild(wrap);
+      }
+      block('Producción', 'units', maxUnits, '', v=>num(v,0));
+      block('Eficiencia', 'efficiency_pct', maxEff, 'green', v=>pct(v));
+      block('Ocupación', 'occupancy_pct', maxOcc, 'amber', v=>pct(v));
+    }
+    function renderInsights(scope){
+      const box=E('insights');
+      box.innerHTML='';
+      const valid=validHourly(scope.scopeHourly);
+      const latest=latestHourlyByMachine(valid);
+      const arr=[...latest.values()];
+      const bestProd=arr.slice().sort((a,b)=>(Number(b.units)||0)-(Number(a.units)||0))[0];
+      const bestEff=arr.slice().sort((a,b)=>(Number(b.efficiency_pct)||0)-(Number(a.efficiency_pct)||0))[0];
+      const bestOcc=arr.slice().sort((a,b)=>(Number(b.occupancy_pct)||0)-(Number(a.occupancy_pct)||0))[0];
+      const cards=[];
+      if(bestProd) cards.push({t:'Mayor producción',d:`${bestProd.machine.replace('_',' ')} con ${num(bestProd.units,0)} unidades validadas.`});
+      if(bestEff) cards.push({t:'Mejor eficiencia',d:`${bestEff.machine.replace('_',' ')} con ${pct(bestEff.efficiency_pct)}.`});
+      if(bestOcc) cards.push({t:'Mayor ocupación',d:`${bestOcc.machine.replace('_',' ')} con ${pct(bestOcc.occupancy_pct)}.`});
+      const noProd=scope.scopeHealth.filter(r=>!latest.has(r.machine)).length;
+      cards.push({t:'Líneas sin datos visibles',d:`${noProd} línea(s) no tienen producción horaria validada en el rango actual.`});
+      cards.slice(0,4).forEach(c=>{
+        const el=document.createElement('div');
+        el.className='insight';
+        el.innerHTML=`<strong>${c.t}</strong><span>${c.d}</span>`;
+        box.appendChild(el);
+      });
+      if(!cards.length) box.innerHTML='<div class="empty">Aún no hay suficientes datos para generar observaciones.</div>';
+    }
+    function renderMeta(scope){
+      const latestCheck=lastCheck();
+      E('syncMeta').textContent='Última sincronización: '+(latestCheck?gtDate(latestCheck):'Sin dato')+' · Actualiza cada minuto';
+    }
+    function renderAll(){
+      const scope=currentScope();
+      renderSummary(scope);
+      renderMachines(scope);
+      renderBars(scope);
+      renderInsights(scope);
+      renderMeta(scope);
+    }
+    async function load(){
+      if(busy) return;
+      busy=true;
+      try{
+        fillMachineOptions();
+        const hours=Number(E('period').value);
+        const from=periodStartISO(hours);
+        const [h,p]=await Promise.all([
+          getRows('oc_machine_health','machine,last_seen_at,checked_at,status,age_minutes'),
+          getRows('oc_machine_hourly','machine,slot,units,target_units,efficiency_pct,occupancy_pct,quality','&slot=gte.'+encodeURIComponent(from)+'&order=slot.desc&limit=3000')
+        ]);
+        health=h||[]; hourly=p||[];
+        renderAll();
+      }catch(err){
+        E('machineGrid').replaceChildren();
+        const errorBox=document.createElement('div');errorBox.className='empty';errorBox.textContent='No se pudo cargar la información: '+err.message;E('machineGrid').append(errorBox);
+        E('barsArea').innerHTML='<div class="empty">Error al consultar comparativos.</div>';
+        E('insights').innerHTML='<div class="insight"><strong>Error de carga</strong><span>Revisa la conexión a Supabase y vuelve a actualizar.</span></div>';
+        E('syncMeta').textContent='No se pudo cargar la información.';
+      }finally{ busy=false; }
+    }
+
+    E('refreshBtn').addEventListener('click',load);
+    E('period').addEventListener('change',load);
+    E('machineFilter').addEventListener('change',renderAll);
+    E('resetBtn').addEventListener('click',()=>{E('machineFilter').value='ALL'; E('period').value='24'; load();});
+
+    load();
+    setInterval(load,60000);
+    setInterval(()=>{if(health.length) renderAll()},15000);
+  </script>
+</body>
+</html>
