@@ -114,7 +114,7 @@ function draw(){
   const h=health.find(x=>x.machine===m),p=latest[m],age=h?.last_seen_at?now-Date.parse(h.last_seen_at):NaN;
   const status= !h?"SIN REGISTROS":!fresh? "DATOS HISTÓRICOS":age<10*60000?"REPORTANDO":age<180*60000?"SIN REPORTE RECIENTE":"DATOS ANTIGUOS";
   const vals=[m.replace("_"," "),status,loc(h?.last_seen_at),duration(age),
-    p?.quality==="validado"&&p.units!=null?fmt(p.units)+" unidades":"Sin datos de producción",
+    p?.quality==="validado"&&p.units!=null?fmt(p.units)+" unidades":"Producción horaria aún no sincronizada",
     h?.sample_count??"—",h?(h.has_counter_reset?"Sí":"No"):"—"];
   const row=document.createElement("tr");
   for(let i=0;i<vals.length;i++){const cell=document.createElement("td");cell.textContent=vals[i];if(i===1){let badge=document.createElement("span");badge.className="pill "+(status==="REPORTANDO"?"good":status==="DATOS ANTIGUOS"?"bad":"warn");badge.textContent=vals[i];cell.textContent="";cell.append(badge);}row.append(cell);}
@@ -123,7 +123,7 @@ function draw(){
  const warnings=[];
  if(!fresh)warnings.push("El diagnóstico no es reciente; revisa la tarea programada de Windows.");
  if(commIssues.length)warnings.push(commIssues.length+" máquina(s) no tienen reportes INTEQ recientes. Esto no demuestra que estén detenidas.");
- if(!valid.length)warnings.push("Producción no calculable: no hay horas con cobertura validada y meta.");
+ if(!valid.length)warnings.push("El agente todavía NO envía a Supabase los contadores de cinchos ni la ocupación; por eso la producción horaria está pendiente. No significa cero unidades.");
  E("warnings").textContent=warnings.join("\n")||"No se detectaron advertencias en esta consulta.";E("warnings").style.whiteSpace="pre-line";
  const canvas=E("chart"),ctx=canvas.getContext("2d");ctx.clearRect(0,0,canvas.width,canvas.height);
  ctx.fillStyle="#132438";ctx.fillRect(0,0,canvas.width,canvas.height);
