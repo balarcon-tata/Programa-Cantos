@@ -79,9 +79,10 @@
     <section class="toolbar">
       <div class="controls">
         <div class="field">
-          <label for="period">Rango</label>
+          <label for="period">Vista</label>
           <select id="period">
-            <option value="6" selected>Últimas 6 horas (Grafana)</option>
+            <option value="last" selected>Último registro disponible</option>
+            <option value="6">Últimas 6 horas (Grafana)</option>
           </select>
         </div>
         <div class="field">
@@ -188,7 +189,9 @@
       return await res.json();
     }
     function render(){
-      const hours=Number(E('period').value);
+      const view=E('period').value;
+      const showLatest=view==='last';
+      const hours=6;
       const selected=E('machineFilter').value;
       const host=E('machineList');
       host.innerHTML='';
@@ -197,7 +200,7 @@
       let recent=0;
       scope.forEach(machine=>{
         const row=map.get(machine) || null;
-        const within=isInRange(row,hours);
+        const within=showLatest ? (row?.last_seen_at && ageMinutes(row.last_seen_at)>=0) : isInRange(row,hours);
         const status=inferStatus(row,hours);
         if(status==='REPORTANDO') recent += 1;
 
@@ -222,7 +225,7 @@
               <div class="tile-value">${within && occ!=='No data' ? `${occ}<small>%</small>` : ''}</div>
             </div>
             <div class="tile ${within && cin!=='No data' ? 'blue' : 'blue empty'}">
-              <div class="tile-label">Cinchos del día</div>
+              <div class="tile-label">Último contador de cinchos</div>
               <div class="tile-value">${within && cin!=='No data' ? cin : 'No data'}</div>
             </div>
             <div class="tile ${within && ta!==null ? 'green' : 'green empty'}">
@@ -244,8 +247,10 @@
       });
 
       const latestCheck=rows.map(r=>r.checked_at).filter(Boolean).sort().at(-1);
-      E('syncMeta').textContent=`Última sincronización: ${latestCheck ? gtDate(latestCheck) : 'Sin dato'} · Actualiza cada minuto`;
-      E('statusNote').textContent=`${recent} de ${scope.length} línea(s) con lectura reciente en el rango seleccionado. Si una fila queda en No data, no se mezcla información histórica.`;
+      E('syncMeta').textContent=`Última consulta del agente: ${latestCheck ? gtDate(latestCheck) : 'Sin dato'} · Actualiza cada minuto`;
+      E('statusNote').textContent=showLatest
+        ? `${recent} de ${scope.length} máquinas con lectura reciente · Vista del último registro, incluidos datos históricos.`
+        : `${recent} de ${scope.length} máquinas con lectura reciente · Vista de las últimas 6 horas.`;
 
       if(!scope.length){
         host.innerHTML='<div class="footer-note">No hay líneas para mostrar.</div>';
